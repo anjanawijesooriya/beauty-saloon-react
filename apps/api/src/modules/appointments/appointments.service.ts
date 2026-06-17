@@ -13,17 +13,29 @@ export const appointmentsService = {
   async create(customerId: string, dto: CreateAppointmentDto) {
     const stylist = await prisma.stylistProfile.findUnique({ where: { id: dto.stylistId } })
     if (!stylist) throw new AppError(404, 'Stylist not found')
+    if (!stylist.isAvailable) throw new AppError(400, 'Stylist is currently unavailable')
 
     const stylistServices = await prisma.stylistService.findMany({
       where: { stylistId: dto.stylistId, serviceId: { in: dto.serviceIds } },
       include: { service: true },
     })
-    if (stylistServices.length !== dto.serviceIds.length) throw new AppError(400, 'One or more services not available with this stylist')
+    if (stylistServices.length !== dto.serviceIds.length)
+      throw new AppError(400, 'One or more services are not offered by this stylist')
 
     const totalMins = stylistServices.reduce((acc, ss) => acc + ss.service.durationMins, 0)
-    const totalLKR = stylistServices.reduce((acc, ss) => acc + Number(ss.priceLKR), 0)
-    const startsAt = new Date(dto.startsAt)
-    const endsAt = new Date(startsAt.getTime() + totalMins * 60000)
+    const totalLKR  = stylistServices.reduce((acc, ss) => acc + Number(ss.priceLKR), 0)
+    const startsAt  = new Date(dto.startsAt)
+    const endsAt    = new Date(startsAt.getTime() + totalMins * 60_000)
+
+    // Conflict guard — prevent double-booking
+    const conflict = await prisma.appointment.findFirst({
+      where: {
+        stylistId: dto.stylistId,
+        status: { in: ['PENDING', 'CONFIRMED'] },
+        AND: [{ startsAt: { lt: endsAt } }, { endsAt: { gt: startsAt } }],
+      },
+    })
+    if (conflict) throw new AppError(409, 'This time slot is no longer available. Please pick another time.')
 
     const appointment = await prisma.appointment.create({
       data: {
@@ -34,14 +46,18 @@ export const appointmentsService = {
         totalLKR,
         notes: dto.notes,
         items: {
-          create: stylistServices.map(ss => ({
+          create: stylistServices.map((ss) => ({
             serviceId: ss.serviceId,
             priceLKR: ss.priceLKR,
             durationMins: ss.service.durationMins,
           })),
         },
       },
-      include: { items: { include: { service: true } }, customer: { select: { name: true, email: true } }, stylist: { include: { user: { select: { name: true } } } } },
+      include: {
+        items: { include: { service: true } },
+        customer: { select: { name: true, email: true } },
+        stylist: { include: { user: { select: { name: true } } } },
+      },
     })
     return appointment
   },
@@ -55,7 +71,11 @@ export const appointmentsService = {
     }
     return prisma.appointment.findMany({
       where,
-      include: { items: { include: { service: true } }, customer: { select: { name: true, email: true } }, stylist: { include: { user: { select: { name: true } } } } },
+      include: {
+        items: { include: { service: true } },
+        customer: { select: { name: true, email: true } },
+        stylist: { include: { user: { select: { name: true } } } },
+      },
       orderBy: { startsAt: 'desc' },
     })
   },
@@ -63,7 +83,11 @@ export const appointmentsService = {
   async getById(id: string) {
     const appt = await prisma.appointment.findUnique({
       where: { id },
-      include: { items: { include: { service: true } }, customer: { select: { name: true, email: true } }, stylist: { include: { user: { select: { name: true } } } } },
+      include: {
+        items: { include: { service: true } },
+        customer: { select: { name: true, email: true } },
+        stylist: { include: { user: { select: { name: true } } } },
+      },
     })
     if (!appt) throw new AppError(404, 'Appointment not found')
     return appt
@@ -73,14 +97,22 @@ export const appointmentsService = {
     const appt = await prisma.appointment.findUnique({ where: { id } })
     if (!appt) throw new AppError(404, 'Appointment not found')
     if (appt.customerId !== userId) throw new AppError(403, 'Forbidden')
+    if (['CANCELLED', 'COMPLETED'].includes(appt.status))
+      throw new AppError(400, `Appointment is already ${appt.status.toLowerCase()}`)
     return prisma.appointment.update({ where: { id }, data: { status: 'CANCELLED', cancelReason: reason } })
   },
 
   async confirm(id: string) {
+    const appt = await prisma.appointment.findUnique({ where: { id } })
+    if (!appt) throw new AppError(404, 'Appointment not found')
+    if (appt.status !== 'PENDING') throw new AppError(400, 'Only pending appointments can be confirmed')
     return prisma.appointment.update({ where: { id }, data: { status: 'CONFIRMED' } })
   },
 
   async complete(id: string) {
+    const appt = await prisma.appointment.findUnique({ where: { id } })
+    if (!appt) throw new AppError(404, 'Appointment not found')
+    if (appt.status !== 'CONFIRMED') throw new AppError(400, 'Only confirmed appointments can be completed')
     return prisma.appointment.update({ where: { id }, data: { status: 'COMPLETED' } })
   },
 }

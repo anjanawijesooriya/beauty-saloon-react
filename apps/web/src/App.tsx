@@ -18,6 +18,7 @@ const StylistDetailPage    = lazy(() => import('./app/(customer)/StylistDetailPa
 const BookPage             = lazy(() => import('./app/(customer)/BookPage'))
 const ProfilePage          = lazy(() => import('./app/(customer)/ProfilePage'))
 const AppointmentsPage     = lazy(() => import('./app/(customer)/AppointmentsPage'))
+const BookingSuccessPage   = lazy(() => import('./app/(customer)/BookingSuccessPage'))
 
 // Stylist portal
 const StylistDashboard     = lazy(() => import('./app/(stylist)/StylistDashboardPage'))
@@ -65,9 +66,10 @@ export default function App() {
             <Route path="/stylists/:id"    element={<StylistDetailPage />} />
 
             <Route element={<ProtectedRoute roles={['CUSTOMER']} />}>
-              <Route path="/book"          element={<BookPage />} />
-              <Route path="/profile"       element={<ProfilePage />} />
-              <Route path="/appointments"  element={<AppointmentsPage />} />
+              <Route path="/book"             element={<BookPage />} />
+              <Route path="/booking/success"  element={<BookingSuccessPage />} />
+              <Route path="/profile"          element={<ProfilePage />} />
+              <Route path="/appointments"     element={<AppointmentsPage />} />
             </Route>
           </Route>
 
