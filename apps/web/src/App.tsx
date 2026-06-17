@@ -7,16 +7,23 @@ import StylistLayout from './components/layout/StylistLayout'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import { useAuthStore } from './store/auth'
 
-const HomePage = lazy(() => import('./app/home/HomePage'))
-const LoginPage = lazy(() => import('./app/(auth)/LoginPage'))
-const RegisterPage = lazy(() => import('./app/(auth)/RegisterPage'))
-const ServicesPage = lazy(() => import('./app/(customer)/ServicesPage'))
-const StylistsPage = lazy(() => import('./app/(customer)/StylistsPage'))
-const BookPage = lazy(() => import('./app/(customer)/BookPage'))
-const ProfilePage = lazy(() => import('./app/(customer)/ProfilePage'))
-const AppointmentsPage = lazy(() => import('./app/(customer)/AppointmentsPage'))
-const AdminDashboard = lazy(() => import('./app/admin/DashboardPage'))
-const StylistDashboard = lazy(() => import('./app/(stylist)/StylistDashboardPage'))
+// Public / customer
+const HomePage           = lazy(() => import('./app/home/HomePage'))
+const LoginPage          = lazy(() => import('./app/(auth)/LoginPage'))
+const RegisterPage       = lazy(() => import('./app/(auth)/RegisterPage'))
+const ServicesPage       = lazy(() => import('./app/(customer)/ServicesPage'))
+const ServiceDetailPage  = lazy(() => import('./app/(customer)/ServiceDetailPage'))
+const StylistsPage       = lazy(() => import('./app/(customer)/StylistsPage'))
+const BookPage           = lazy(() => import('./app/(customer)/BookPage'))
+const ProfilePage        = lazy(() => import('./app/(customer)/ProfilePage'))
+const AppointmentsPage   = lazy(() => import('./app/(customer)/AppointmentsPage'))
+
+// Stylist portal
+const StylistDashboard   = lazy(() => import('./app/(stylist)/StylistDashboardPage'))
+
+// Admin
+const AdminDashboard     = lazy(() => import('./app/admin/DashboardPage'))
+const AdminServicesPage  = lazy(() => import('./app/admin/ServicesPage'))
 
 function Spinner() {
   return (
@@ -43,19 +50,20 @@ export default function App() {
       <Suspense fallback={<Spinner />}>
         <Routes>
           {/* Auth pages — no layout */}
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login"    element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
           {/* Customer-facing */}
           <Route element={<CustomerLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/services" element={<ServicesPage />} />
-            <Route path="/stylists" element={<StylistsPage />} />
+            <Route path="/"                element={<HomePage />} />
+            <Route path="/services"        element={<ServicesPage />} />
+            <Route path="/services/:id"    element={<ServiceDetailPage />} />
+            <Route path="/stylists"        element={<StylistsPage />} />
 
             <Route element={<ProtectedRoute roles={['CUSTOMER']} />}>
-              <Route path="/book" element={<BookPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/appointments" element={<AppointmentsPage />} />
+              <Route path="/book"          element={<BookPage />} />
+              <Route path="/profile"       element={<ProfilePage />} />
+              <Route path="/appointments"  element={<AppointmentsPage />} />
             </Route>
           </Route>
 
@@ -69,7 +77,8 @@ export default function App() {
           {/* Admin */}
           <Route element={<ProtectedRoute roles={['ADMIN']} />}>
             <Route element={<AdminLayout />}>
-              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin"          element={<AdminDashboard />} />
+              <Route path="/admin/services" element={<AdminServicesPage />} />
             </Route>
           </Route>
         </Routes>

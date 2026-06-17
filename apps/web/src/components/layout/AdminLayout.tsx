@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, Scissors, Calendar, Settings, ShoppingBag } from 'lucide-react'
+import { LayoutDashboard, Users, Scissors, Calendar, ShoppingBag } from 'lucide-react'
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -25,7 +25,7 @@ export default function AdminLayout() {
               key={to}
               to={to}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                pathname === to ? 'bg-brand-700 text-white' : 'text-brand-200 hover:bg-brand-800 hover:text-white'
+                (to === '/admin' ? pathname === to : pathname.startsWith(to)) ? 'bg-brand-700 text-white' : 'text-brand-200 hover:bg-brand-800 hover:text-white'
               }`}
             >
               <Icon size={18} />
