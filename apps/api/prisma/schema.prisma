@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  STYLIST
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+  FAILED
+}
+
+model User {
+  id           String  @id @default(uuid())
+  email        String  @unique
+  passwordHash String?
+  name         String
+  phone        String?
+  avatarUrl    String?
+  role         Role    @default(CUSTOMER)
+  googleId     String? @unique
+  isActive     Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  stylistProfile StylistProfile?
+  appointments   Appointment[]   @relation("CustomerAppointments")
+  reviews        Review[]
+  loyaltyPoints  LoyaltyPoints?
+  orders         Order[]
+}
+
+model StylistProfile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio           String?
+  specialities  String[]
+  experience    Int      @default(0)
+  rating        Float    @default(0)
+  reviewCount   Int      @default(0)
+  portfolioUrls String[]
+  isAvailable   Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  availabilities Availability[]
+  appointments   Appointment[]    @relation("StylistAppointments")
+  services       StylistService[]
+}
+
+model ServiceCategory {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  slug     String    @unique
+  imageUrl String?
+  order    Int       @default(0)
+  services Service[]
+}
+
+model Service {
+  id           String          @id @default(uuid())
+  categoryId   String
+  category     ServiceCategory @relation(fields: [categoryId], references: [id])
+  name         String
+  slug         String          @unique
+  description  String?
+  durationMins Int
+  basePriceLKR Decimal         @db.Decimal(10, 2)
+  imageUrl     String?
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  stylistServices  StylistService[]
+  appointmentItems AppointmentItem[]
+}
+
+model StylistService {
+  id        String         @id @default(uuid())
+  stylistId String
+  stylist   StylistProfile @relation(fields: [stylistId], references: [id])
+  serviceId String
+  service   Service        @relation(fields: [serviceId], references: [id])
+  priceLKR  Decimal        @db.Decimal(10, 2)
+
+  @@unique([stylistId, serviceId])
+}
+
+model Availability {
+  id        String         @id @default(uuid())
+  stylistId String
+  stylist   StylistProfile @relation(fields: [stylistId], references: [id])
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isActive  Boolean        @default(true)
+}
+
+model Appointment {
+  id            String            @id @default(uuid())
+  customerId    String
+  customer      User              @relation("CustomerAppointments", fields: [customerId], references: [id])
+  stylistId     String
+  stylist       StylistProfile    @relation("StylistAppointments", fields: [stylistId], references: [id])
+  startsAt      DateTime
+  endsAt        DateTime
+  status        AppointmentStatus @default(PENDING)
+  totalLKR      Decimal           @db.Decimal(10, 2)
+  notes         String?
+  cancelReason  String?
+  paymentStatus PaymentStatus     @default(UNPAID)
+  stripePaymentIntentId String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  items AppointmentItem[]
+  review Review?
+}
+
+model AppointmentItem {
+  id            String      @id @default(uuid())
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  serviceId     String
+  service       Service     @relation(fields: [serviceId], references: [id])
+  priceLKR      Decimal     @db.Decimal(10, 2)
+  durationMins  Int
+}
+
+model Review {
+  id            String      @id @default(uuid())
+  customerId    String
+  customer      User        @relation(fields: [customerId], references: [id])
+  stylistId     String
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  rating        Int
+  comment       String?
+  isHidden      Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+}
+
+model LoyaltyPoints {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  transactions LoyaltyTransaction[]
+}
+
+model LoyaltyTransaction {
+  id        String        @id @default(uuid())
+  loyaltyId String
+  loyalty   LoyaltyPoints @relation(fields: [loyaltyId], references: [id])
+  points    Int
+  reason    String
+  createdAt DateTime      @default(now())
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  priceLKR    Decimal  @db.Decimal(10, 2)
+  stock       Int      @default(0)
+  imageUrls   String[]
+  categoryId  String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems OrderItem[]
+}
+
+model Order {
+  id                    String        @id @default(uuid())
+  customerId            String
+  customer              User          @relation(fields: [customerId], references: [id])
+  status                OrderStatus   @default(PENDING)
+  paymentStatus         PaymentStatus @default(UNPAID)
+  totalLKR              Decimal       @db.Decimal(10, 2)
+  stripePaymentIntentId String?
+  shippingAddress       Json?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  priceLKR  Decimal @db.Decimal(10, 2)
+}
+
+model Promotion {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  description String?
+  type        String
+  value       Decimal   @db.Decimal(10, 2)
+  minOrderLKR Decimal?  @db.Decimal(10, 2)
+  maxUses     Int?
+  usedCount   Int       @default(0)
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+}

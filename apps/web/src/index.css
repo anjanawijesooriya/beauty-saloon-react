@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap');
+
+:root {
+  --font-ui: 'Plus Jakarta Sans', sans-serif;
+  --font-display: 'Cormorant Garamond', serif;
+}
+
+body {
+  font-family: var(--font-ui);
+}
+
+h1, h2, .display {
+  font-family: var(--font-display);
+}
+
+@layer utilities {
+  .gradient-brand {
+    background: linear-gradient(135deg, #D4537E 0%, #E8C062 100%);
+  }
+  .gradient-hero {
+    background: linear-gradient(160deg, #FDF2F6 0%, #FBDFE9 50%, #FFF8F0 100%);
+  }
+  .text-gradient {
+    background: linear-gradient(135deg, #D4537E, #C23A64);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.4);
+  }
+  .glass-dark {
+    background: rgba(30,10,20,0.60);
+    backdrop-filter: blur(16px);
+  }
+}
