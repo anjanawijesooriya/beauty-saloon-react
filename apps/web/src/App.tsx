@@ -18,34 +18,40 @@ const AppointmentsPage = lazy(() => import('./app/(customer)/AppointmentsPage'))
 const AdminDashboard = lazy(() => import('./app/admin/DashboardPage'))
 const StylistDashboard = lazy(() => import('./app/(stylist)/StylistDashboardPage'))
 
-function PageLoader() {
+function Spinner() {
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="w-10 h-10 border-4 border-brand-400 border-t-transparent rounded-full animate-spin" />
+    <div className="flex items-center justify-center min-h-screen gradient-hero">
+      <div className="text-center">
+        <p className="font-display text-4xl italic text-brand-400 mb-6">GlowHer</p>
+        <div className="w-8 h-8 border-4 border-brand-400 border-t-transparent rounded-full animate-spin mx-auto" />
+      </div>
     </div>
   )
 }
 
 export default function App() {
-  const { initialize } = useAuthStore()
+  const { initialize, initialized } = useAuthStore()
 
   useEffect(() => {
     initialize()
   }, [initialize])
 
+  if (!initialized) return <Spinner />
+
   return (
     <AnimatePresence mode="wait">
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<Spinner />}>
         <Routes>
-          {/* Public */}
+          {/* Auth pages — no layout */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* Customer-facing (public + protected) */}
+          {/* Customer-facing */}
           <Route element={<CustomerLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/stylists" element={<StylistsPage />} />
+
             <Route element={<ProtectedRoute roles={['CUSTOMER']} />}>
               <Route path="/book" element={<BookPage />} />
               <Route path="/profile" element={<ProfilePage />} />

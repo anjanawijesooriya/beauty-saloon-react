@@ -28,4 +28,10 @@ export const authController = {
       next(err)
     }
   },
+
+  logout(_req: Request, res: Response) {
+    // JWT is stateless — client drops the token.
+    // Endpoint exists for future token blocklist / cookie clearing.
+    res.json({ message: 'Logged out' })
+  },
 }
