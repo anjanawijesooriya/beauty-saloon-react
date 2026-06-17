@@ -8,22 +8,25 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import { useAuthStore } from './store/auth'
 
 // Public / customer
-const HomePage           = lazy(() => import('./app/home/HomePage'))
-const LoginPage          = lazy(() => import('./app/(auth)/LoginPage'))
-const RegisterPage       = lazy(() => import('./app/(auth)/RegisterPage'))
-const ServicesPage       = lazy(() => import('./app/(customer)/ServicesPage'))
-const ServiceDetailPage  = lazy(() => import('./app/(customer)/ServiceDetailPage'))
-const StylistsPage       = lazy(() => import('./app/(customer)/StylistsPage'))
-const BookPage           = lazy(() => import('./app/(customer)/BookPage'))
-const ProfilePage        = lazy(() => import('./app/(customer)/ProfilePage'))
-const AppointmentsPage   = lazy(() => import('./app/(customer)/AppointmentsPage'))
+const HomePage             = lazy(() => import('./app/home/HomePage'))
+const LoginPage            = lazy(() => import('./app/(auth)/LoginPage'))
+const RegisterPage         = lazy(() => import('./app/(auth)/RegisterPage'))
+const ServicesPage         = lazy(() => import('./app/(customer)/ServicesPage'))
+const ServiceDetailPage    = lazy(() => import('./app/(customer)/ServiceDetailPage'))
+const StylistsPage         = lazy(() => import('./app/(customer)/StylistsPage'))
+const StylistDetailPage    = lazy(() => import('./app/(customer)/StylistDetailPage'))
+const BookPage             = lazy(() => import('./app/(customer)/BookPage'))
+const ProfilePage          = lazy(() => import('./app/(customer)/ProfilePage'))
+const AppointmentsPage     = lazy(() => import('./app/(customer)/AppointmentsPage'))
 
 // Stylist portal
-const StylistDashboard   = lazy(() => import('./app/(stylist)/StylistDashboardPage'))
+const StylistDashboard     = lazy(() => import('./app/(stylist)/StylistDashboardPage'))
+const StylistProfilePage   = lazy(() => import('./app/(stylist)/StylistProfilePage'))
 
 // Admin
-const AdminDashboard     = lazy(() => import('./app/admin/DashboardPage'))
-const AdminServicesPage  = lazy(() => import('./app/admin/ServicesPage'))
+const AdminDashboard       = lazy(() => import('./app/admin/DashboardPage'))
+const AdminServicesPage    = lazy(() => import('./app/admin/ServicesPage'))
+const AdminStylistsPage    = lazy(() => import('./app/admin/StylistsPage'))
 
 function Spinner() {
   return (
@@ -59,6 +62,7 @@ export default function App() {
             <Route path="/services"        element={<ServicesPage />} />
             <Route path="/services/:id"    element={<ServiceDetailPage />} />
             <Route path="/stylists"        element={<StylistsPage />} />
+            <Route path="/stylists/:id"    element={<StylistDetailPage />} />
 
             <Route element={<ProtectedRoute roles={['CUSTOMER']} />}>
               <Route path="/book"          element={<BookPage />} />
@@ -70,15 +74,17 @@ export default function App() {
           {/* Stylist portal */}
           <Route element={<ProtectedRoute roles={['STYLIST']} />}>
             <Route element={<StylistLayout />}>
-              <Route path="/stylist/dashboard" element={<StylistDashboard />} />
+              <Route path="/stylist/dashboard"  element={<StylistDashboard />} />
+              <Route path="/stylist/profile"    element={<StylistProfilePage />} />
             </Route>
           </Route>
 
           {/* Admin */}
           <Route element={<ProtectedRoute roles={['ADMIN']} />}>
             <Route element={<AdminLayout />}>
-              <Route path="/admin"          element={<AdminDashboard />} />
-              <Route path="/admin/services" element={<AdminServicesPage />} />
+              <Route path="/admin"           element={<AdminDashboard />} />
+              <Route path="/admin/services"  element={<AdminServicesPage />} />
+              <Route path="/admin/stylists"  element={<AdminStylistsPage />} />
             </Route>
           </Route>
         </Routes>
