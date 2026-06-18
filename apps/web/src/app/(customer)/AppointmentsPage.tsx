@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { Star, X } from 'lucide-react'
+import { Star, X, CalendarCheck, ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useAppointments, useCancelAppointment } from '@/hooks/useAppointments'
 import { useCreateReview } from '@/hooks/useReviews'
 import type { Appointment } from '@/types'
@@ -81,8 +82,15 @@ export default function AppointmentsPage() {
     <div className="max-w-4xl mx-auto px-4 py-10">
       <h1 className="font-display text-4xl italic text-neutral-900 mb-8">My Appointments</h1>
       {!appointments?.length ? (
-        <div className="text-center py-16 text-neutral-400">
-          <p className="text-lg">No appointments yet.</p>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+          <div className="w-20 h-20 rounded-full bg-brand-50 flex items-center justify-center mb-5">
+            <CalendarCheck size={36} className="text-brand-300" />
+          </div>
+          <h2 className="font-display text-2xl italic text-neutral-900 mb-2">No appointments yet</h2>
+          <p className="text-neutral-400 text-sm mb-7 max-w-xs">Book your first appointment with one of our expert stylists.</p>
+          <Link to="/book" className="inline-flex items-center gap-2 px-6 py-3 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity">
+            Book Now <ArrowRight size={15} />
+          </Link>
         </div>
       ) : (
         <div className="space-y-4">

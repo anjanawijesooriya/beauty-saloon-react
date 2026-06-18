@@ -109,10 +109,15 @@ export default function OrdersPage() {
           {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-20 bg-neutral-100 rounded-2xl animate-pulse" />)}
         </div>
       ) : !orders?.length ? (
-        <div className="text-center py-20 text-neutral-400">
-          <Package size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No orders yet</p>
-          <Link to="/shop" className="mt-3 text-brand-500 text-sm hover:underline inline-block">Browse the shop</Link>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+          <div className="w-20 h-20 rounded-full bg-brand-50 flex items-center justify-center mb-5">
+            <Package size={36} className="text-brand-300" />
+          </div>
+          <h2 className="font-display text-2xl italic text-neutral-900 mb-2">No orders yet</h2>
+          <p className="text-neutral-400 text-sm mb-7 max-w-xs">Your order history will appear here once you make a purchase.</p>
+          <Link to="/shop" className="inline-flex items-center gap-2 px-6 py-3 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity">
+            Browse Shop <ArrowRight size={15} />
+          </Link>
         </div>
       ) : (
         <div className="space-y-3">

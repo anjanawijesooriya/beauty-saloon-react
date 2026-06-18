@@ -91,9 +91,12 @@ export default function ShopPage() {
           {Array.from({ length: 8 }).map((_, i) => <div key={i} className="aspect-square bg-neutral-100 rounded-2xl animate-pulse" />)}
         </div>
       ) : !data?.products.length ? (
-        <div className="text-center py-20 text-neutral-400">
-          <ShoppingBag size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No products found</p>
+        <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
+          <div className="w-20 h-20 rounded-full bg-brand-50 flex items-center justify-center mb-5">
+            <ShoppingBag size={36} className="text-brand-300" />
+          </div>
+          <h2 className="font-display text-2xl italic text-neutral-900 mb-2">No products found</h2>
+          <p className="text-neutral-400 text-sm">Try a different search term or check back later.</p>
         </div>
       ) : (
         <motion.div

@@ -65,10 +65,10 @@ export default function CustomerLayout() {
           </div>
         </div>
       </header>
-      <main>
+      <main className="min-h-[calc(100vh-4rem)]">
         <Outlet />
       </main>
-      <footer className="bg-brand-900 text-brand-100 py-8 mt-16">
+      <footer className="bg-brand-900 text-brand-100 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm">
           <p className="font-display text-xl italic text-white mb-2">GlowHer</p>
           <p>Sri Lanka's Premier Beauty Platform · © {new Date().getFullYear()}</p>

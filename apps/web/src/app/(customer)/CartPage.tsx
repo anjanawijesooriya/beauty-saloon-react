@@ -9,10 +9,12 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-        <ShoppingBag size={56} className="mx-auto mb-4 text-neutral-200" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <div className="w-20 h-20 rounded-full bg-brand-50 flex items-center justify-center mb-5">
+          <ShoppingBag size={36} className="text-brand-300" />
+        </div>
         <h2 className="font-display text-3xl italic text-neutral-900 mb-2">Your cart is empty</h2>
-        <p className="text-neutral-400 text-sm mb-6">Discover our curated beauty products</p>
+        <p className="text-neutral-400 text-sm mb-7 max-w-xs">Discover our curated beauty products and add them to your cart.</p>
         <Link to="/shop" className="inline-flex items-center gap-2 px-6 py-3 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity">
           Browse Shop <ArrowRight size={15} />
         </Link>
