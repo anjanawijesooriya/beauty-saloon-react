@@ -2,15 +2,18 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Star, Briefcase, ArrowLeft, Clock, ChevronRight, CheckCircle2 } from 'lucide-react'
+import { format } from 'date-fns'
 import { useStylist } from '@/hooks/useStylists'
+import { useStylistReviews } from '@/hooks/useReviews'
 import { fadeUp, staggerContainer } from '@/lib/motion'
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-type Tab = 'services' | 'portfolio' | 'availability'
+type Tab = 'services' | 'portfolio' | 'availability' | 'reviews'
 
 export default function StylistDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: stylist, isLoading } = useStylist(id!)
+  const { data: reviews } = useStylistReviews(id!)
   const [tab, setTab] = useState<Tab>('services')
 
   if (isLoading) {
@@ -33,9 +36,10 @@ export default function StylistDetailPage() {
   }
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'services', label: `Services (${(stylist as any).services?.length ?? 0})` },
-    { key: 'portfolio', label: `Portfolio (${stylist.portfolioUrls?.length ?? 0})` },
+    { key: 'services',     label: `Services (${(stylist as any).services?.length ?? 0})` },
+    { key: 'portfolio',    label: `Portfolio (${stylist.portfolioUrls?.length ?? 0})` },
     { key: 'availability', label: 'Availability' },
+    { key: 'reviews',      label: `Reviews (${stylist.reviewCount})` },
   ]
 
   return (
@@ -198,6 +202,37 @@ export default function StylistDetailPage() {
                 <Link to={`/book?stylistId=${stylist.id}`} className="mt-6 w-full flex items-center justify-center py-3 gradient-brand text-white rounded-xl font-medium hover:opacity-90 transition-opacity text-sm">
                   Book an Appointment
                 </Link>
+              </div>
+            )}
+
+            {tab === 'reviews' && (
+              <div className="bg-white rounded-2xl shadow-card p-6">
+                <h3 className="font-semibold text-neutral-900 mb-5">Customer Reviews</h3>
+                {!reviews?.length ? (
+                  <p className="text-neutral-400 text-sm text-center py-8">No reviews yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="pb-4 border-b border-neutral-100 last:border-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                              {review.customer.name[0]}
+                            </div>
+                            <span className="text-sm font-medium text-neutral-800">{review.customer.name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star key={i} size={13} className={i < review.rating ? 'text-gold-400 fill-gold-400' : 'text-neutral-200'} />
+                            ))}
+                          </div>
+                        </div>
+                        {review.comment && <p className="text-sm text-neutral-600 ml-10">{review.comment}</p>}
+                        <p className="text-xs text-neutral-300 ml-10 mt-1">{format(new Date(review.createdAt), 'd MMM yyyy')}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

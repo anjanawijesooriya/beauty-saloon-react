@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, Scissors, Calendar, ShoppingBag, Package, Tag } from 'lucide-react'
+import { LayoutDashboard, Users, Scissors, Calendar, ShoppingBag, Package, Tag, Star, Trophy } from 'lucide-react'
 
 const navItems = [
   { to: '/admin',              label: 'Dashboard',    icon: LayoutDashboard },
@@ -8,6 +8,8 @@ const navItems = [
   { to: '/admin/products',     label: 'Products',     icon: ShoppingBag },
   { to: '/admin/orders',       label: 'Orders',       icon: Package },
   { to: '/admin/promotions',   label: 'Promotions',   icon: Tag },
+  { to: '/admin/reviews',      label: 'Reviews',      icon: Star },
+  { to: '/admin/loyalty',      label: 'Loyalty',      icon: Trophy },
   { to: '/admin/appointments', label: 'Appointments', icon: Calendar },
 ]
 

@@ -14,6 +14,9 @@ import productRoutes     from './modules/products/products.routes'
 import orderRoutes       from './modules/orders/orders.routes'
 import promotionRoutes   from './modules/promotions/promotions.routes'
 import webhookRoutes     from './modules/webhooks/webhooks.routes'
+import loyaltyRoutes     from './modules/loyalty/loyalty.routes'
+import reviewRoutes      from './modules/reviews/reviews.routes'
+import { startReminderJob } from './jobs/reminders.job'
 
 const app = express()
 
@@ -34,7 +37,11 @@ app.use('/api/appointments', appointmentRoutes)
 app.use('/api/products',     productRoutes)
 app.use('/api/orders',       orderRoutes)
 app.use('/api/promotions',   promotionRoutes)
+app.use('/api/loyalty',      loyaltyRoutes)
+app.use('/api/reviews',      reviewRoutes)
 
 app.use(errorHandler)
+
+startReminderJob()
 
 app.listen(env.PORT, () => console.log(`GlowHer API running on :${env.PORT}`))

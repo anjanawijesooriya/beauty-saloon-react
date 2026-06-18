@@ -10,6 +10,13 @@ interface RegisterDto {
   email: string
   password: string
   phone?: string
+  refCode?: string
+}
+
+function generateReferralCode(name: string): string {
+  const base = name.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4).padEnd(4, 'X')
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase()
+  return `${base}${rand}`
 }
 
 interface LoginDto {
@@ -35,12 +42,15 @@ export const authService = {
     if (existing) throw new AppError(409, 'Email already registered')
 
     const passwordHash = await bcrypt.hash(dto.password, 12)
+    const referralCode = generateReferralCode(dto.name)
     const user = await prisma.user.create({
       data: {
         name: dto.name,
         email: dto.email,
         passwordHash,
-        phone: dto.phone ?? null,
+        phone:        dto.phone ?? null,
+        referralCode,
+        referredBy:   dto.refCode ?? null,
       },
     })
 
@@ -96,6 +106,7 @@ export const authService = {
         role: true,
         phone: true,
         avatarUrl: true,
+        referralCode: true,
         isActive: true,
         createdAt: true,
       },

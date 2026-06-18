@@ -5,6 +5,7 @@ export interface User {
   role: 'CUSTOMER' | 'STYLIST' | 'ADMIN'
   avatarUrl?: string
   phone?: string
+  referralCode?: string
 }
 
 export interface ServiceCategory {

@@ -8,6 +8,7 @@ export interface AuthUser {
   role: 'CUSTOMER' | 'STYLIST' | 'ADMIN'
   avatarUrl?: string | null
   phone?: string | null
+  referralCode?: string | null
 }
 
 interface AuthStore {

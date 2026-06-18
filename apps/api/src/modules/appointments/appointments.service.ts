@@ -1,6 +1,9 @@
+import { format } from 'date-fns'
 import { prisma } from '../../config/database'
 import { AppError } from '../../middleware/error.middleware'
 import { Role } from '@prisma/client'
+import { sendBookingConfirmation, sendCancellationEmail } from '../../lib/mailer'
+import { loyaltyService } from '../loyalty/loyalty.service'
 
 interface CreateAppointmentDto {
   stylistId: string
@@ -59,6 +62,15 @@ export const appointmentsService = {
         stylist: { include: { user: { select: { name: true } } } },
       },
     })
+
+    // Fire-and-forget: send booking confirmation email
+    sendBookingConfirmation(appointment.customer.email, {
+      name:     appointment.customer.name,
+      date:     format(startsAt, 'PPp'),
+      stylist:  appointment.stylist.user.name,
+      services: appointment.items.map((i) => i.service.name),
+    }).catch(() => {})
+
     return appointment
   },
 
@@ -94,12 +106,17 @@ export const appointmentsService = {
   },
 
   async cancel(id: string, userId: string, reason?: string) {
-    const appt = await prisma.appointment.findUnique({ where: { id } })
+    const appt = await prisma.appointment.findUnique({
+      where: { id },
+      include: { customer: { select: { name: true, email: true } } },
+    })
     if (!appt) throw new AppError(404, 'Appointment not found')
     if (appt.customerId !== userId) throw new AppError(403, 'Forbidden')
     if (['CANCELLED', 'COMPLETED'].includes(appt.status))
       throw new AppError(400, `Appointment is already ${appt.status.toLowerCase()}`)
-    return prisma.appointment.update({ where: { id }, data: { status: 'CANCELLED', cancelReason: reason } })
+    const updated = await prisma.appointment.update({ where: { id }, data: { status: 'CANCELLED', cancelReason: reason } })
+    sendCancellationEmail(appt.customer.email, appt.customer.name).catch(() => {})
+    return updated
   },
 
   async confirm(id: string) {
@@ -110,10 +127,34 @@ export const appointmentsService = {
   },
 
   async complete(id: string) {
-    const appt = await prisma.appointment.findUnique({ where: { id } })
+    const appt = await prisma.appointment.findUnique({
+      where: { id },
+      include: { customer: { select: { referralCode: true, referredBy: true } } },
+    })
     if (!appt) throw new AppError(404, 'Appointment not found')
     if (appt.status !== 'CONFIRMED') throw new AppError(400, 'Only confirmed appointments can be completed')
-    return prisma.appointment.update({ where: { id }, data: { status: 'COMPLETED' } })
+
+    const updated = await prisma.appointment.update({ where: { id }, data: { status: 'COMPLETED' } })
+
+    // Award 1 point per LKR spent
+    const points = Math.floor(Number(appt.totalLKR))
+    loyaltyService.award(appt.customerId, points, `Earned from appointment #${id.slice(0, 8)}`).catch(() => {})
+
+    // Referral: first completed booking — award referrer 1000 points
+    if (appt.customer.referredBy) {
+      const prevCompleted = await prisma.appointment.count({
+        where: { customerId: appt.customerId, status: 'COMPLETED', id: { not: id } },
+      })
+      if (prevCompleted === 0) {
+        const referrer = await prisma.user.findUnique({ where: { referralCode: appt.customer.referredBy } })
+        if (referrer) {
+          loyaltyService.award(referrer.id, 1000, 'Referral bonus').catch(() => {})
+          loyaltyService.award(appt.customerId, 500, 'Welcome referral bonus').catch(() => {})
+        }
+      }
+    }
+
+    return updated
   },
 
   async createPaymentIntent(appointmentId: string, customerId: string) {
