@@ -25,4 +25,8 @@ export const appointmentsController = {
   async complete(req: Request, res: Response, next: NextFunction) {
     try { res.json(await appointmentsService.complete(req.params.id)) } catch (err) { next(err) }
   },
+
+  async adminStats(_req: Request, res: Response, next: NextFunction) {
+    try { res.json(await appointmentsService.adminStats()) } catch (err) { next(err) }
+  },
 }

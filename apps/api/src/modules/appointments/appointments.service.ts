@@ -115,4 +115,37 @@ export const appointmentsService = {
     if (appt.status !== 'CONFIRMED') throw new AppError(400, 'Only confirmed appointments can be completed')
     return prisma.appointment.update({ where: { id }, data: { status: 'COMPLETED' } })
   },
+
+  async adminStats() {
+    const [statusCounts, revenueAgg, recent, userCount, activeStylistCount] = await Promise.all([
+      prisma.appointment.groupBy({ by: ['status'], _count: { _all: true } }),
+      prisma.appointment.aggregate({ where: { status: 'COMPLETED' }, _sum: { totalLKR: true } }),
+      prisma.appointment.findMany({
+        take: 10,
+        orderBy: { startsAt: 'desc' },
+        include: {
+          customer: { select: { name: true, email: true } },
+          stylist:  { include: { user: { select: { name: true } } } },
+          items:    { include: { service: { select: { name: true } } } },
+        },
+      }),
+      prisma.user.count(),
+      prisma.stylistProfile.count({ where: { isAvailable: true } }),
+    ])
+
+    const byStatus = Object.fromEntries(statusCounts.map((r) => [r.status, r._count._all]))
+    const total    = statusCounts.reduce((a, r) => a + r._count._all, 0)
+
+    return {
+      total,
+      pending:            byStatus['PENDING']   ?? 0,
+      confirmed:          byStatus['CONFIRMED'] ?? 0,
+      cancelled:          byStatus['CANCELLED'] ?? 0,
+      completed:          byStatus['COMPLETED'] ?? 0,
+      revenueLKR:         Number(revenueAgg._sum.totalLKR ?? 0),
+      userCount,
+      activeStylistCount,
+      recent,
+    }
+  },
 }
