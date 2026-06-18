@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isSameDay, isToday, isPast, startOfDay,
   addMonths, subMonths,
 } from 'date-fns'
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react'
+import { toast } from 'sonner'
 import { useStylistAvailability, useStylistSlots } from '@/hooks/useStylists'
 import { useBookingStore } from '@/store/booking'
 
@@ -20,6 +21,14 @@ export default function Step3DateTime() {
     selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
     totalDurationMins(),
   )
+
+  // If a selected time slot disappears after a refresh (booked by someone else), clear it
+  useEffect(() => {
+    if (selectedTime && slots && !slots.includes(selectedTime)) {
+      setTime(null)
+      toast.error('That slot was just booked — please select another time.')
+    }
+  }, [slots, selectedTime, setTime])
 
   // Build calendar grid
   const calStart = startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 0 })

@@ -40,6 +40,9 @@ export const useStylistSlots = (stylistId: string, date: string, duration: numbe
     queryFn: () =>
       api.get(`/stylists/${stylistId}/slots`, { params: { date, duration } }).then((r) => r.data),
     enabled: !!stylistId && !!date && duration > 0,
+    staleTime: 0,          // always consider stale so refetch triggers work
+    refetchInterval: 20_000, // re-poll every 20 s to catch newly-booked slots
+    refetchOnMount: 'always',
   })
 
 export const useMyProfile = () =>

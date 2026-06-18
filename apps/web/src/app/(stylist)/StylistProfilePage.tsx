@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Trash2, CheckCircle2 } from 'lucide-react'
 import { useMyProfile, useUpdateMyProfile, useSetMyAvailability } from '@/hooks/useStylists'
-import { toast } from 'sonner'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -99,105 +98,150 @@ export default function StylistProfilePage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold text-neutral-900">My Profile</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-neutral-900">My Profile</h1>
+        <p className="text-sm text-neutral-400 mt-0.5">Manage your profile details and weekly schedule</p>
+      </div>
 
-      {/* Profile form */}
-      <form onSubmit={handleSubmit(onSaveProfile)} className="bg-white rounded-2xl shadow-card p-6 space-y-5">
-        <h2 className="font-semibold text-neutral-900 border-b border-neutral-100 pb-3">Profile Details</h2>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+        {/* Left — Profile form */}
+        <form onSubmit={handleSubmit(onSaveProfile)} className="bg-white rounded-2xl shadow-card p-6 space-y-5">
+          <h2 className="font-semibold text-neutral-900 border-b border-neutral-100 pb-3">Profile Details</h2>
 
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1.5">Bio</label>
-          <textarea {...register('bio')} rows={4} placeholder="Tell customers about yourself…" className="w-full px-4 py-3 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 resize-none" />
-          {errors.bio && <p className="text-red-500 text-xs mt-1">{errors.bio.message}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1.5">Years of experience</label>
-          <input {...register('experience')} type="number" min={0} max={50} className="w-32 px-4 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1.5">Specialties</label>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {specialities.map((s) => (
-              <span key={s} className="flex items-center gap-1.5 bg-brand-50 text-brand-700 text-sm px-3 py-1 rounded-pill">
-                {s}
-                <button type="button" onClick={() => removeSpecialty(s)} className="hover:text-brand-900"><Trash2 size={12} /></button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input
-              value={newSpecialty}
-              onChange={(e) => setNewSpecialty(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialty())}
-              placeholder="e.g. Hair Colouring"
-              className="flex-1 px-4 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1.5">Bio</label>
+            <textarea
+              {...register('bio')}
+              rows={5}
+              placeholder="Tell customers about yourself…"
+              className="w-full px-4 py-3 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 resize-none"
             />
-            <button type="button" onClick={addSpecialty} className="px-4 py-2.5 border border-brand-400 text-brand-400 rounded-xl text-sm hover:bg-brand-50 transition-colors">
-              <Plus size={16} />
-            </button>
+            {errors.bio && <p className="text-red-500 text-xs mt-1">{errors.bio.message}</p>}
           </div>
-          {errors.specialities && <p className="text-red-500 text-xs mt-1">{errors.specialities.message}</p>}
-        </div>
 
-        <div className="flex items-center gap-3">
-          <input {...register('isAvailable')} type="checkbox" id="available" className="w-4 h-4 accent-brand-400" />
-          <label htmlFor="available" className="text-sm text-neutral-700">Available for bookings</label>
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1.5">Years of experience</label>
+            <input
+              {...register('experience')}
+              type="number"
+              min={0}
+              max={50}
+              className="w-32 px-4 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+            />
+          </div>
 
-        <button type="submit" disabled={savingProfile} className="w-full py-3 gradient-brand text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-60 text-sm">
-          {savingProfile ? 'Saving…' : 'Save Profile'}
-        </button>
-      </form>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1.5">Specialties</label>
+            <div className="flex flex-wrap gap-2 mb-2 min-h-[2rem]">
+              {specialities.map((s) => (
+                <span key={s} className="flex items-center gap-1.5 bg-brand-50 text-brand-700 text-sm px-3 py-1 rounded-pill">
+                  {s}
+                  <button type="button" onClick={() => removeSpecialty(s)} className="hover:text-brand-900">
+                    <Trash2 size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={newSpecialty}
+                onChange={(e) => setNewSpecialty(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialty())}
+                placeholder="e.g. Hair Colouring"
+                className="flex-1 px-4 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+              />
+              <button
+                type="button"
+                onClick={addSpecialty}
+                className="px-4 py-2.5 border border-brand-400 text-brand-400 rounded-xl text-sm hover:bg-brand-50 transition-colors"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+            {errors.specialities && <p className="text-red-500 text-xs mt-1">{errors.specialities.message}</p>}
+          </div>
 
-      {/* Availability */}
-      <div className="bg-white rounded-2xl shadow-card p-6">
-        <h2 className="font-semibold text-neutral-900 border-b border-neutral-100 pb-3 mb-4">Weekly Availability</h2>
-        <p className="text-xs text-neutral-400 mb-4">Toggle days on/off and set your working hours.</p>
-        <div className="space-y-3">
-          {DAYS.map((day, i) => {
-            const slot = availSlots[i]
-            return (
-              <div key={day} className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${slot ? 'bg-brand-50' : 'bg-neutral-50'}`}>
-                <button
-                  type="button"
-                  onClick={() => toggleDay(i)}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${slot ? 'gradient-brand text-white' : 'bg-white border border-neutral-200 text-neutral-400'}`}
+          <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl">
+            <input {...register('isAvailable')} type="checkbox" id="available" className="w-4 h-4 accent-brand-400" />
+            <label htmlFor="available" className="text-sm text-neutral-700 cursor-pointer select-none">
+              Available for bookings
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={savingProfile}
+            className="w-full py-3 gradient-brand text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-60 text-sm"
+          >
+            {savingProfile ? 'Saving…' : 'Save Profile'}
+          </button>
+        </form>
+
+        {/* Right — Weekly availability */}
+        <div className="bg-white rounded-2xl shadow-card p-6">
+          <h2 className="font-semibold text-neutral-900 border-b border-neutral-100 pb-3 mb-1">Weekly Availability</h2>
+          <p className="text-xs text-neutral-400 mb-4">Toggle the days you work and set your hours.</p>
+          <div className="space-y-2">
+            {DAYS.map((day, i) => {
+              const slot = availSlots[i]
+              return (
+                <div
+                  key={day}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                    slot ? 'bg-brand-50' : 'bg-neutral-50'
+                  }`}
                 >
-                  <CheckCircle2 size={16} />
-                </button>
-                <span className={`w-24 text-sm font-medium ${slot ? 'text-brand-700' : 'text-neutral-400'}`}>{day}</span>
-                {slot && (
-                  <div className="flex items-center gap-2 flex-1">
-                    <input
-                      type="time"
-                      value={slot.startTime}
-                      onChange={(e) => setAvailSlots((p) => ({ ...p, [i]: { ...p[i]!, startTime: e.target.value } }))}
-                      className="px-2 py-1 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-                    />
-                    <span className="text-neutral-400 text-xs">to</span>
-                    <input
-                      type="time"
-                      value={slot.endTime}
-                      onChange={(e) => setAvailSlots((p) => ({ ...p, [i]: { ...p[i]!, endTime: e.target.value } }))}
-                      className="px-2 py-1 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-                    />
-                  </div>
-                )}
-              </div>
-            )
-          })}
+                  <button
+                    type="button"
+                    onClick={() => toggleDay(i)}
+                    className={`w-8 h-8 flex-shrink-0 rounded-lg flex items-center justify-center transition-all ${
+                      slot
+                        ? 'gradient-brand text-white shadow-sm'
+                        : 'bg-white border border-neutral-200 text-neutral-300'
+                    }`}
+                  >
+                    <CheckCircle2 size={15} />
+                  </button>
+                  <span className={`w-20 text-sm font-medium flex-shrink-0 ${slot ? 'text-brand-700' : 'text-neutral-400'}`}>
+                    {day}
+                  </span>
+                  {slot ? (
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                      <input
+                        type="time"
+                        value={slot.startTime}
+                        onChange={(e) =>
+                          setAvailSlots((p) => ({ ...p, [i]: { ...p[i]!, startTime: e.target.value } }))
+                        }
+                        className="w-0 flex-1 min-w-0 px-2 py-1 border border-brand-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-400 bg-white"
+                      />
+                      <span className="text-neutral-400 text-xs flex-shrink-0">–</span>
+                      <input
+                        type="time"
+                        value={slot.endTime}
+                        onChange={(e) =>
+                          setAvailSlots((p) => ({ ...p, [i]: { ...p[i]!, endTime: e.target.value } }))
+                        }
+                        className="w-0 flex-1 min-w-0 px-2 py-1 border border-brand-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-400 bg-white"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-xs text-neutral-300 flex-1">Off</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={onSaveAvailability}
+            disabled={savingAvail}
+            className="mt-5 w-full py-3 gradient-brand text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-60 text-sm"
+          >
+            {savingAvail ? 'Saving…' : 'Save Availability'}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={onSaveAvailability}
-          disabled={savingAvail}
-          className="mt-5 w-full py-3 gradient-brand text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-60 text-sm"
-        >
-          {savingAvail ? 'Saving…' : 'Save Availability'}
-        </button>
       </div>
     </div>
   )

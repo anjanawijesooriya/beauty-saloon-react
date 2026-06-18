@@ -1,3 +1,6 @@
+// Must be set before any date operations so slot generation uses salon's local timezone
+process.env.TZ = 'Asia/Colombo'
+
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
