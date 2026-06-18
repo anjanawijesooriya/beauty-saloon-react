@@ -116,6 +116,32 @@ export const appointmentsService = {
     return prisma.appointment.update({ where: { id }, data: { status: 'COMPLETED' } })
   },
 
+  async createPaymentIntent(appointmentId: string, customerId: string) {
+    const { stripe } = await import('../../lib/stripe')
+    const { env } = await import('../../config/env')
+
+    const appt = await prisma.appointment.findUnique({ where: { id: appointmentId } })
+    if (!appt) throw new AppError(404, 'Appointment not found')
+    if (appt.customerId !== customerId) throw new AppError(403, 'Forbidden')
+    if (appt.paymentStatus === 'PAID') throw new AppError(400, 'Appointment is already paid')
+
+    if (!env.STRIPE_SECRET_KEY) {
+      return { clientSecret: 'dev_mock_secret', appointmentId }
+    }
+
+    const intent = await stripe.paymentIntents.create({
+      amount: Math.round(Number(appt.totalLKR) * 100),
+      currency: 'lkr',
+      metadata: { appointmentId, customerId },
+    })
+
+    await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { stripePaymentIntentId: intent.id },
+    })
+    return { clientSecret: intent.client_secret, appointmentId }
+  },
+
   async adminStats() {
     const [statusCounts, revenueAgg, recent, userCount, activeStylistCount] = await Promise.all([
       prisma.appointment.groupBy({ by: ['status'], _count: { _all: true } }),

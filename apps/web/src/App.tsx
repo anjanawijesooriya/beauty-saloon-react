@@ -19,6 +19,14 @@ const BookPage             = lazy(() => import('./app/(customer)/BookPage'))
 const ProfilePage          = lazy(() => import('./app/(customer)/ProfilePage'))
 const AppointmentsPage     = lazy(() => import('./app/(customer)/AppointmentsPage'))
 const BookingSuccessPage   = lazy(() => import('./app/(customer)/BookingSuccessPage'))
+const ShopPage             = lazy(() => import('./app/(customer)/ShopPage'))
+const CartPage             = lazy(() => import('./app/(customer)/CartPage'))
+const CheckoutPage         = lazy(() => import('./app/(customer)/CheckoutPage'))
+const OrdersPage           = lazy(() => import('./app/(customer)/OrdersPage'))
+const { OrderDetailPage }  = { OrderDetailPage: lazy(() => import('./app/(customer)/OrdersPage').then(m => ({ default: m.OrderDetailPage }))) }
+const AdminProductsPage    = lazy(() => import('./app/admin/ProductsPage'))
+const AdminOrdersPage      = lazy(() => import('./app/admin/OrdersPage'))
+const AdminPromotionsPage  = lazy(() => import('./app/admin/PromotionsPage'))
 
 // Stylist portal
 const StylistDashboard     = lazy(() => import('./app/(stylist)/StylistDashboardPage'))
@@ -64,12 +72,17 @@ export default function App() {
             <Route path="/services/:id"    element={<ServiceDetailPage />} />
             <Route path="/stylists"        element={<StylistsPage />} />
             <Route path="/stylists/:id"    element={<StylistDetailPage />} />
+            <Route path="/shop"            element={<ShopPage />} />
 
             <Route element={<ProtectedRoute roles={['CUSTOMER']} />}>
               <Route path="/book"             element={<BookPage />} />
               <Route path="/booking/success"  element={<BookingSuccessPage />} />
               <Route path="/profile"          element={<ProfilePage />} />
               <Route path="/appointments"     element={<AppointmentsPage />} />
+              <Route path="/cart"             element={<CartPage />} />
+              <Route path="/checkout"         element={<CheckoutPage />} />
+              <Route path="/orders"           element={<OrdersPage />} />
+              <Route path="/orders/:id"       element={<OrderDetailPage />} />
             </Route>
           </Route>
 
@@ -84,9 +97,12 @@ export default function App() {
           {/* Admin */}
           <Route element={<ProtectedRoute roles={['ADMIN']} />}>
             <Route element={<AdminLayout />}>
-              <Route path="/admin"           element={<AdminDashboard />} />
-              <Route path="/admin/services"  element={<AdminServicesPage />} />
-              <Route path="/admin/stylists"  element={<AdminStylistsPage />} />
+              <Route path="/admin"               element={<AdminDashboard />} />
+              <Route path="/admin/services"    element={<AdminServicesPage />} />
+              <Route path="/admin/stylists"    element={<AdminStylistsPage />} />
+              <Route path="/admin/products"    element={<AdminProductsPage />} />
+              <Route path="/admin/orders"      element={<AdminOrdersPage />} />
+              <Route path="/admin/promotions"  element={<AdminPromotionsPage />} />
             </Route>
           </Route>
         </Routes>

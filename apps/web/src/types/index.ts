@@ -58,6 +58,62 @@ export interface AppointmentItem {
   durationMins: number
 }
 
+export interface Product {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  priceLKR: string
+  stock: number
+  imageUrls: string[]
+  categoryId: string
+  isActive: boolean
+  createdAt: string
+}
+
+export type OrderStatus = 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED'
+
+export interface OrderItem {
+  id: string
+  productId: string
+  product: { name: string; imageUrls: string[] }
+  quantity: number
+  priceLKR: string
+}
+
+export interface Order {
+  id: string
+  customerId: string
+  customer?: { name: string; email: string }
+  status: OrderStatus
+  paymentStatus: PaymentStatus
+  totalLKR: string
+  stripePaymentIntentId?: string
+  shippingAddress: {
+    fullName: string
+    addressLine1: string
+    addressLine2?: string
+    city: string
+    phone: string
+  }
+  items: OrderItem[]
+  createdAt: string
+}
+
+export interface Promotion {
+  id: string
+  code: string
+  description?: string
+  type: 'PERCENT' | 'FIXED'
+  value: string
+  minOrderLKR?: string
+  maxUses?: number
+  usedCount: number
+  expiresAt?: string
+  isActive: boolean
+  createdAt: string
+}
+
 export interface Appointment {
   id: string
   customerId: string

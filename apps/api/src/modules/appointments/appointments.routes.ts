@@ -23,6 +23,7 @@ router.get('/admin/stats',   authorize('ADMIN'),                                
 router.post('/',              authorize('CUSTOMER'),          validate(CreateSchema),  appointmentsController.create)
 router.get('/',                                                                        appointmentsController.list)
 router.get('/:id',                                                                     appointmentsController.getById)
+router.post('/:id/pay',      authorize('CUSTOMER'),                                    appointmentsController.pay)
 router.patch('/:id/cancel',                                   validate(CancelSchema),  appointmentsController.cancel)
 router.patch('/:id/confirm', authorize('STYLIST', 'ADMIN'),                           appointmentsController.confirm)
 router.patch('/:id/complete', authorize('STYLIST', 'ADMIN'),                          appointmentsController.complete)

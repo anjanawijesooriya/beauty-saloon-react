@@ -1,13 +1,14 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, Scissors, Calendar, ShoppingBag } from 'lucide-react'
+import { LayoutDashboard, Users, Scissors, Calendar, ShoppingBag, Package, Tag } from 'lucide-react'
 
 const navItems = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/admin/users', label: 'Users', icon: Users },
-  { to: '/admin/services', label: 'Services', icon: Scissors },
-  { to: '/admin/stylists', label: 'Stylists', icon: Users },
+  { to: '/admin',              label: 'Dashboard',    icon: LayoutDashboard },
+  { to: '/admin/services',     label: 'Services',     icon: Scissors },
+  { to: '/admin/stylists',     label: 'Stylists',     icon: Users },
+  { to: '/admin/products',     label: 'Products',     icon: ShoppingBag },
+  { to: '/admin/orders',       label: 'Orders',       icon: Package },
+  { to: '/admin/promotions',   label: 'Promotions',   icon: Tag },
   { to: '/admin/appointments', label: 'Appointments', icon: Calendar },
-  { to: '/admin/products', label: 'Products', icon: ShoppingBag },
 ]
 
 export default function AdminLayout() {
