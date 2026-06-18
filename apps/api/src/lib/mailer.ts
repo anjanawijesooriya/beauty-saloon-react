@@ -10,7 +10,17 @@ async function sendEmail(to: string, subject: string, html: string) {
     console.log(`[mailer-dev] To: ${to} | Subject: ${subject}`)
     return
   }
-  await sgMail.send({ to, from: env.SENDGRID_FROM, subject, html })
+  if (!env.SENDGRID_FROM) {
+    console.error('[mailer] SENDGRID_FROM is not set — email not sent')
+    return
+  }
+  try {
+    await sgMail.send({ to, from: env.SENDGRID_FROM, subject, html })
+    console.log(`[mailer] Sent "${subject}" → ${to}`)
+  } catch (err: any) {
+    const body = err?.response?.body ?? err?.message ?? err
+    console.error(`[mailer] SendGrid error sending "${subject}" to ${to}:`, JSON.stringify(body))
+  }
 }
 
 export async function sendWelcomeEmail(to: string, name: string) {

@@ -63,14 +63,6 @@ export const appointmentsService = {
       },
     })
 
-    // Fire-and-forget: send booking confirmation email
-    sendBookingConfirmation(appointment.customer.email, {
-      name:     appointment.customer.name,
-      date:     format(startsAt, 'PPp'),
-      stylist:  appointment.stylist.user.name,
-      services: appointment.items.map((i) => i.service.name),
-    }).catch(() => {})
-
     return appointment
   },
 
@@ -115,15 +107,32 @@ export const appointmentsService = {
     if (['CANCELLED', 'COMPLETED'].includes(appt.status))
       throw new AppError(400, `Appointment is already ${appt.status.toLowerCase()}`)
     const updated = await prisma.appointment.update({ where: { id }, data: { status: 'CANCELLED', cancelReason: reason } })
-    sendCancellationEmail(appt.customer.email, appt.customer.name).catch(() => {})
+    sendCancellationEmail(appt.customer.email, appt.customer.name).catch((e) => console.error('[appointments] cancellation email failed:', e?.message))
     return updated
   },
 
   async confirm(id: string) {
-    const appt = await prisma.appointment.findUnique({ where: { id } })
+    const appt = await prisma.appointment.findUnique({
+      where: { id },
+      include: {
+        items:    { include: { service: true } },
+        customer: { select: { name: true, email: true } },
+        stylist:  { include: { user: { select: { name: true } } } },
+      },
+    })
     if (!appt) throw new AppError(404, 'Appointment not found')
     if (appt.status !== 'PENDING') throw new AppError(400, 'Only pending appointments can be confirmed')
-    return prisma.appointment.update({ where: { id }, data: { status: 'CONFIRMED' } })
+
+    const updated = await prisma.appointment.update({ where: { id }, data: { status: 'CONFIRMED' } })
+
+    sendBookingConfirmation(appt.customer.email, {
+      name:     appt.customer.name,
+      date:     format(appt.startsAt, 'PPp'),
+      stylist:  appt.stylist.user.name,
+      services: appt.items.map((i) => i.service.name),
+    }).catch((e) => console.error('[appointments] confirmation email failed:', e?.message))
+
+    return updated
   },
 
   async complete(id: string) {

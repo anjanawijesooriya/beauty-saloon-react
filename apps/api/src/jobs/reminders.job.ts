@@ -27,14 +27,13 @@ export function startReminderJob() {
         name:    appt.customer.name,
         time:    timeStr,
         stylist: appt.stylist.user.name,
-      }).catch(() => {})
+      }).catch((e) => console.error(`[cron] email reminder failed for ${appt.customer.email}:`, e?.message))
 
-      // SMS reminder if phone present
       if (appt.customer.phone) {
         sendSms(
           appt.customer.phone,
-          `Hi ${appt.customer.name}! Your GlowHer appointment with ${appt.stylist.user.name} is tomorrow at ${timeStr}. We can't wait to see you! 💄`
-        ).catch(() => {})
+          `Hi ${appt.customer.name}! Your GlowHer appointment with ${appt.stylist.user.name} is tomorrow at ${timeStr}. We can't wait to see you!`
+        ).catch((e) => console.error(`[cron] SMS reminder failed for ${appt.customer.phone}:`, e?.message))
       }
     }
     console.log(`[cron] Sent ${appointments.length} reminders`)

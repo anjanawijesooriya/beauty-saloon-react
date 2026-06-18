@@ -61,7 +61,9 @@ export default function RegisterPage() {
           ))}
         </div>
         <div className="relative text-center text-white">
-          <h1 className="font-display text-6xl italic mb-4">GlowHer</h1>
+          <Link to="/">
+            <h1 className="font-display text-6xl italic mb-4">GlowHer</h1>
+          </Link>
           <p className="text-white/80 text-lg max-w-xs">Join thousands of women discovering beauty in Sri Lanka</p>
         </div>
       </div>
