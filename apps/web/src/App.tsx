@@ -27,8 +27,9 @@ const { OrderDetailPage }  = { OrderDetailPage: lazy(() => import('./app/(custom
 const AdminProductsPage    = lazy(() => import('./app/admin/ProductsPage'))
 const AdminOrdersPage      = lazy(() => import('./app/admin/OrdersPage'))
 const AdminPromotionsPage  = lazy(() => import('./app/admin/PromotionsPage'))
-const AdminReviewsPage     = lazy(() => import('./app/admin/ReviewsPage'))
-const AdminLoyaltyPage     = lazy(() => import('./app/admin/LoyaltyPage'))
+const AdminReviewsPage        = lazy(() => import('./app/admin/ReviewsPage'))
+const AdminLoyaltyPage        = lazy(() => import('./app/admin/LoyaltyPage'))
+const AdminAppointmentsPage   = lazy(() => import('./app/admin/AppointmentsPage'))
 
 // Stylist portal
 const StylistDashboard     = lazy(() => import('./app/(stylist)/StylistDashboardPage'))
@@ -105,8 +106,9 @@ export default function App() {
               <Route path="/admin/products"    element={<AdminProductsPage />} />
               <Route path="/admin/orders"      element={<AdminOrdersPage />} />
               <Route path="/admin/promotions"  element={<AdminPromotionsPage />} />
-              <Route path="/admin/reviews"     element={<AdminReviewsPage />} />
-              <Route path="/admin/loyalty"     element={<AdminLoyaltyPage />} />
+              <Route path="/admin/reviews"       element={<AdminReviewsPage />} />
+              <Route path="/admin/loyalty"       element={<AdminLoyaltyPage />} />
+              <Route path="/admin/appointments"  element={<AdminAppointmentsPage />} />
             </Route>
           </Route>
         </Routes>

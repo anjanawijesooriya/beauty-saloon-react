@@ -105,13 +105,13 @@ export const appointmentsService = {
     return appt
   },
 
-  async cancel(id: string, userId: string, reason?: string) {
+  async cancel(id: string, userId: string, reason?: string, role?: Role) {
     const appt = await prisma.appointment.findUnique({
       where: { id },
       include: { customer: { select: { name: true, email: true } } },
     })
     if (!appt) throw new AppError(404, 'Appointment not found')
-    if (appt.customerId !== userId) throw new AppError(403, 'Forbidden')
+    if (role !== 'ADMIN' && appt.customerId !== userId) throw new AppError(403, 'Forbidden')
     if (['CANCELLED', 'COMPLETED'].includes(appt.status))
       throw new AppError(400, `Appointment is already ${appt.status.toLowerCase()}`)
     const updated = await prisma.appointment.update({ where: { id }, data: { status: 'CANCELLED', cancelReason: reason } })

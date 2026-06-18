@@ -28,6 +28,7 @@ type FormValues = z.infer<typeof schema>
 export default function RegisterPage() {
   const { register: registerUser } = useAuthStore()
   const navigate = useNavigate()
+
   const [showPassword, setShowPassword] = useState(false)
 
   const {
@@ -40,7 +41,10 @@ export default function RegisterPage() {
     try {
       await registerUser(data.name, data.email, data.password, data.phone || undefined)
       toast.success('Account created! Welcome to GlowHer.')
-      navigate('/')
+      const role = useAuthStore.getState().user?.role
+      if (role === 'ADMIN') navigate('/admin', { replace: true })
+      else if (role === 'STYLIST') navigate('/stylist/dashboard', { replace: true })
+      else navigate('/')
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Registration failed'
       toast.error(msg)

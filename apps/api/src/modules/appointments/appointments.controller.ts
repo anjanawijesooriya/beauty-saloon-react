@@ -15,7 +15,7 @@ export const appointmentsController = {
   },
 
   async cancel(req: Request, res: Response, next: NextFunction) {
-    try { res.json(await appointmentsService.cancel(req.params.id, req.user.sub, req.body.reason)) } catch (err) { next(err) }
+    try { res.json(await appointmentsService.cancel(req.params.id, req.user.sub, req.body.reason, req.user.role)) } catch (err) { next(err) }
   },
 
   async confirm(req: Request, res: Response, next: NextFunction) {

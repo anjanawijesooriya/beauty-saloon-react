@@ -37,3 +37,29 @@ export const useCancelAppointment = () =>
       toast.success('Appointment cancelled')
     },
   })
+
+export const useAdminAppointments = () =>
+  useQuery<Appointment[]>({
+    queryKey: ['admin-appointments'],
+    queryFn: () => api.get('/appointments').then((r) => r.data),
+  })
+
+export const useAdminConfirm = () =>
+  useMutation({
+    mutationFn: (id: string) => api.patch(`/appointments/${id}/confirm`).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-appointments'] })
+      toast.success('Appointment confirmed')
+    },
+    onError: () => toast.error('Failed to confirm'),
+  })
+
+export const useAdminComplete = () =>
+  useMutation({
+    mutationFn: (id: string) => api.patch(`/appointments/${id}/complete`).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-appointments'] })
+      toast.success('Appointment marked complete')
+    },
+    onError: () => toast.error('Failed to complete'),
+  })

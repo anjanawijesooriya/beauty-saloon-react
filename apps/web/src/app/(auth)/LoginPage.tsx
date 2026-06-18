@@ -33,7 +33,10 @@ export default function LoginPage() {
     try {
       await login(data.email, data.password)
       toast.success('Welcome back!')
-      navigate(from, { replace: true })
+      const role = useAuthStore.getState().user?.role
+      if (role === 'ADMIN') navigate('/admin', { replace: true })
+      else if (role === 'STYLIST') navigate('/stylist/dashboard', { replace: true })
+      else navigate(from, { replace: true })
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Invalid email or password')
     }
