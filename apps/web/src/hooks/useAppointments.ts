@@ -63,3 +63,23 @@ export const useAdminComplete = () =>
     },
     onError: () => toast.error('Failed to complete'),
   })
+
+export const useStylistConfirm = () =>
+  useMutation({
+    mutationFn: (id: string) => api.patch(`/appointments/${id}/confirm`).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] })
+      toast.success('Appointment confirmed')
+    },
+    onError: () => toast.error('Failed to confirm'),
+  })
+
+export const useStylistComplete = () =>
+  useMutation({
+    mutationFn: (id: string) => api.patch(`/appointments/${id}/complete`).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] })
+      toast.success('Appointment marked complete')
+    },
+    onError: () => toast.error('Failed to complete'),
+  })

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { CheckCircle2, XCircle, Clock, CheckCheck } from 'lucide-react'
-import { useAdminAppointments, useAdminConfirm, useAdminComplete, useCancelAppointment } from '@/hooks/useAppointments'
+import { Clock } from 'lucide-react'
+import { useAdminAppointments } from '@/hooks/useAppointments'
 import type { AppointmentStatus } from '@/types'
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
@@ -25,9 +25,6 @@ type Filter = AppointmentStatus | typeof ALL
 
 export default function AdminAppointmentsPage() {
   const { data: appointments = [], isLoading } = useAdminAppointments()
-  const confirm  = useAdminConfirm()
-  const complete = useAdminComplete()
-  const cancel   = useCancelAppointment()
   const [filter, setFilter] = useState<Filter>(ALL)
 
   const statuses: Filter[] = [ALL, 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']
@@ -87,7 +84,6 @@ export default function AdminAppointmentsPage() {
                 <th className="text-left px-4 py-3 font-medium text-neutral-500">Services</th>
                 <th className="text-right px-4 py-3 font-medium text-neutral-500">Total</th>
                 <th className="text-left px-4 py-3 font-medium text-neutral-500">Status</th>
-                <th className="text-right px-4 py-3 font-medium text-neutral-500">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-50">
@@ -118,40 +114,6 @@ export default function AdminAppointmentsPage() {
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_STYLES[appt.status]}`}>
                       {STATUS_LABELS[appt.status]}
                     </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5 justify-end">
-                      {appt.status === 'PENDING' && (
-                        <button
-                          onClick={() => confirm.mutate(appt.id)}
-                          disabled={confirm.isPending}
-                          title="Confirm"
-                          className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50"
-                        >
-                          <CheckCircle2 size={15} />
-                        </button>
-                      )}
-                      {appt.status === 'CONFIRMED' && (
-                        <button
-                          onClick={() => complete.mutate(appt.id)}
-                          disabled={complete.isPending}
-                          title="Mark Complete"
-                          className="p-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors disabled:opacity-50"
-                        >
-                          <CheckCheck size={15} />
-                        </button>
-                      )}
-                      {['PENDING', 'CONFIRMED'].includes(appt.status) && (
-                        <button
-                          onClick={() => cancel.mutate({ id: appt.id })}
-                          disabled={cancel.isPending}
-                          title="Cancel"
-                          className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors disabled:opacity-50"
-                        >
-                          <XCircle size={15} />
-                        </button>
-                      )}
-                    </div>
                   </td>
                 </tr>
               ))}

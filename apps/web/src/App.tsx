@@ -33,8 +33,11 @@ const AdminLoyaltyPage        = lazy(() => import('./app/admin/LoyaltyPage'))
 const AdminAppointmentsPage   = lazy(() => import('./app/admin/AppointmentsPage'))
 
 // Stylist portal
-const StylistDashboard     = lazy(() => import('./app/(stylist)/StylistDashboardPage'))
-const StylistProfilePage   = lazy(() => import('./app/(stylist)/StylistProfilePage'))
+const StylistDashboard          = lazy(() => import('./app/(stylist)/StylistDashboardPage'))
+const StylistAppointmentsPage   = lazy(() => import('./app/(stylist)/StylistAppointmentsPage'))
+const StylistReviewsPage        = lazy(() => import('./app/(stylist)/StylistReviewsPage'))
+const StylistIncomePage         = lazy(() => import('./app/(stylist)/StylistIncomePage'))
+const StylistProfilePage        = lazy(() => import('./app/(stylist)/StylistProfilePage'))
 
 // Admin
 const AdminDashboard       = lazy(() => import('./app/admin/DashboardPage'))
@@ -94,8 +97,11 @@ export default function App() {
           {/* Stylist portal */}
           <Route element={<ProtectedRoute roles={['STYLIST']} />}>
             <Route element={<StylistLayout />}>
-              <Route path="/stylist/dashboard"  element={<StylistDashboard />} />
-              <Route path="/stylist/profile"    element={<StylistProfilePage />} />
+              <Route path="/stylist/dashboard"    element={<StylistDashboard />} />
+              <Route path="/stylist/appointments" element={<StylistAppointmentsPage />} />
+              <Route path="/stylist/reviews"      element={<StylistReviewsPage />} />
+              <Route path="/stylist/income"       element={<StylistIncomePage />} />
+              <Route path="/stylist/profile"      element={<StylistProfilePage />} />
             </Route>
           </Route>
 
