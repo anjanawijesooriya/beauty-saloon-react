@@ -20,6 +20,7 @@ const ProfilePage          = lazy(() => import('./app/(customer)/ProfilePage'))
 const AppointmentsPage     = lazy(() => import('./app/(customer)/AppointmentsPage'))
 const BookingSuccessPage   = lazy(() => import('./app/(customer)/BookingSuccessPage'))
 const ShopPage             = lazy(() => import('./app/(customer)/ShopPage'))
+const ProductDetailPage    = lazy(() => import('./app/(customer)/ProductDetailPage'))
 const CartPage             = lazy(() => import('./app/(customer)/CartPage'))
 const CheckoutPage         = lazy(() => import('./app/(customer)/CheckoutPage'))
 const OrdersPage           = lazy(() => import('./app/(customer)/OrdersPage'))
@@ -76,6 +77,7 @@ export default function App() {
             <Route path="/stylists"        element={<StylistsPage />} />
             <Route path="/stylists/:id"    element={<StylistDetailPage />} />
             <Route path="/shop"            element={<ShopPage />} />
+            <Route path="/shop/:slug"     element={<ProductDetailPage />} />
 
             <Route element={<ProtectedRoute roles={['CUSTOMER']} />}>
               <Route path="/book"             element={<BookPage />} />
