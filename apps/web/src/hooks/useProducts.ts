@@ -21,10 +21,18 @@ export interface ProductsResponse {
   totalPages: number
 }
 
+function invalidateProducts() {
+  queryClient.invalidateQueries({ queryKey: ['products'] })
+}
+
+// ── Queries (polled so stock/price changes appear without refresh) ──────────
+
 export const useProducts = (filters?: ProductFilters) =>
   useQuery<ProductsResponse>({
     queryKey: ['products', filters],
     queryFn: () => api.get('/products', { params: filters }).then((r) => r.data),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   })
 
 export const useProduct = (slug: string) =>
@@ -32,7 +40,11 @@ export const useProduct = (slug: string) =>
     queryKey: ['products', slug],
     queryFn: () => api.get(`/products/${slug}`).then((r) => r.data),
     enabled: !!slug,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   })
+
+// ── Admin mutations ────────────────────────────────────────────────────────
 
 interface CreateProductDto {
   name: string
@@ -47,7 +59,7 @@ interface CreateProductDto {
 export const useCreateProduct = () =>
   useMutation({
     mutationFn: (dto: CreateProductDto) => api.post('/products', dto).then((r) => r.data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['products'] }); toast.success('Product created') },
+    onSuccess: () => { invalidateProducts(); toast.success('Product created') },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to create product'),
   })
 
@@ -55,12 +67,12 @@ export const useUpdateProduct = () =>
   useMutation({
     mutationFn: ({ id, ...data }: Partial<CreateProductDto> & { id: string }) =>
       api.put(`/products/${id}`, data).then((r) => r.data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['products'] }); toast.success('Product updated') },
+    onSuccess: () => { invalidateProducts(); toast.success('Product updated') },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to update product'),
   })
 
 export const useDeleteProduct = () =>
   useMutation({
     mutationFn: (id: string) => api.delete(`/products/${id}`),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['products'] }); toast.success('Product removed') },
+    onSuccess: () => { invalidateProducts(); toast.success('Product removed') },
   })

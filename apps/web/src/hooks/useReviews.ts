@@ -15,18 +15,26 @@ export interface Review {
   createdAt: string
 }
 
+// ── Queries ────────────────────────────────────────────────────────────────
+
 export const useStylistReviews = (stylistId: string) =>
   useQuery<Review[]>({
     queryKey: ['reviews', stylistId],
     queryFn: () => api.get(`/reviews/stylist/${stylistId}`).then((r) => r.data),
     enabled: !!stylistId,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   })
 
 export const useAdminReviews = () =>
   useQuery<(Review & { appointment: { startsAt: string }; customer: { email: string; name: string } })[]>({
     queryKey: ['admin-reviews'],
     queryFn: () => api.get('/reviews/admin/all').then((r) => r.data),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   })
+
+// ── Mutations ──────────────────────────────────────────────────────────────
 
 export const useCreateReview = () =>
   useMutation({
@@ -34,7 +42,11 @@ export const useCreateReview = () =>
       api.post('/reviews', dto).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reviews'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-reviews'] })
       queryClient.invalidateQueries({ queryKey: ['appointments'] })
+      // Stylist rating/reviewCount updates on the public profile
+      queryClient.invalidateQueries({ queryKey: ['stylists'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-stylists'] })
       toast.success('Review submitted!')
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to submit review'),
@@ -43,5 +55,10 @@ export const useCreateReview = () =>
 export const useToggleReviewVisibility = () =>
   useMutation({
     mutationFn: (id: string) => api.patch(`/reviews/admin/${id}/toggle`).then((r) => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-reviews'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-reviews'] })
+      // Hidden/visible reviews affect public stylist profile
+      queryClient.invalidateQueries({ queryKey: ['reviews'] })
+      queryClient.invalidateQueries({ queryKey: ['stylists'] })
+    },
   })

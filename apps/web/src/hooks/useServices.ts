@@ -21,19 +21,27 @@ export interface ServicesResponse {
   totalPages: number
 }
 
+function invalidateServices() {
+  queryClient.invalidateQueries({ queryKey: ['services'] })
+}
+
 // ── Queries ────────────────────────────────────────────────────────────────
 
 export const useServiceCategories = () =>
   useQuery<ServiceCategory[]>({
     queryKey: ['service-categories'],
     queryFn: () => api.get('/services/categories').then((r) => r.data),
+    // Categories change rarely — 10-min stale + window-focus refetch is enough
     staleTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: true,
   })
 
 export const useServices = (filters?: ServiceFilters) =>
   useQuery<ServicesResponse>({
     queryKey: ['services', filters],
     queryFn: () => api.get('/services', { params: filters }).then((r) => r.data),
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   })
 
 export const useService = (id: string) =>
@@ -41,6 +49,8 @@ export const useService = (id: string) =>
     queryKey: ['services', id],
     queryFn: () => api.get(`/services/${id}`).then((r) => r.data),
     enabled: !!id,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   })
 
 // ── Admin mutations ────────────────────────────────────────────────────────
@@ -59,7 +69,7 @@ export const useCreateService = () =>
   useMutation({
     mutationFn: (dto: CreateServiceDto) => api.post('/services', dto).then((r) => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['services'] })
+      invalidateServices()
       toast.success('Service created')
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to create service'),
@@ -70,7 +80,7 @@ export const useUpdateService = () =>
     mutationFn: ({ id, ...data }: Partial<CreateServiceDto> & { id: string }) =>
       api.put(`/services/${id}`, data).then((r) => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['services'] })
+      invalidateServices()
       toast.success('Service updated')
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to update service'),
@@ -80,7 +90,7 @@ export const useDeleteService = () =>
   useMutation({
     mutationFn: (id: string) => api.delete(`/services/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['services'] })
+      invalidateServices()
       toast.success('Service removed')
     },
   })
@@ -91,6 +101,7 @@ export const useCreateCategory = () =>
       api.post('/services/categories', dto).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-categories'] })
+      invalidateServices()
       toast.success('Category created')
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to create category'),

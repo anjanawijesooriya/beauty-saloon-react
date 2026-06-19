@@ -12,12 +12,21 @@ export interface StylistsResponse {
   totalPages: number
 }
 
-// ── Queries ────────────────────────────────────────────────────────────────
+// Invalidate every cache key that surfaces stylist data
+function invalidateStylists() {
+  queryClient.invalidateQueries({ queryKey: ['stylists'] })
+  queryClient.invalidateQueries({ queryKey: ['admin-stylists'] })
+  queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
+}
+
+// ── Public / customer queries (polled every 30 s) ──────────────────────────
 
 export const useStylists = (filters?: { specialty?: string; search?: string; page?: number }) =>
   useQuery<StylistsResponse>({
     queryKey: ['stylists', filters],
     queryFn: () => api.get('/stylists', { params: filters }).then((r) => r.data),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   })
 
 export const useStylist = (id: string) =>
@@ -25,6 +34,8 @@ export const useStylist = (id: string) =>
     queryKey: ['stylists', id],
     queryFn: () => api.get(`/stylists/${id}`).then((r) => r.data),
     enabled: !!id,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   })
 
 export const useStylistAvailability = (stylistId: string) =>
@@ -32,6 +43,8 @@ export const useStylistAvailability = (stylistId: string) =>
     queryKey: ['stylists', stylistId, 'availability'],
     queryFn: () => api.get(`/stylists/${stylistId}/availability`).then((r) => r.data),
     enabled: !!stylistId,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   })
 
 export const useStylistSlots = (stylistId: string, date: string, duration: number) =>
@@ -40,8 +53,8 @@ export const useStylistSlots = (stylistId: string, date: string, duration: numbe
     queryFn: () =>
       api.get(`/stylists/${stylistId}/slots`, { params: { date, duration } }).then((r) => r.data),
     enabled: !!stylistId && !!date && duration > 0,
-    staleTime: 0,          // always consider stale so refetch triggers work
-    refetchInterval: 20_000, // re-poll every 20 s to catch newly-booked slots
+    staleTime: 0,
+    refetchInterval: 20_000,
     refetchOnMount: 'always',
   })
 
@@ -50,6 +63,8 @@ export const useMyProfile = () =>
     queryKey: ['stylist-me'],
     queryFn: () => api.get('/stylists/me').then((r) => r.data),
   })
+
+// ── Admin queries (polled every 30 s) ─────────────────────────────────────
 
 export const useAdminStylists = () =>
   useQuery<StylistProfile[]>({
@@ -67,6 +82,8 @@ export const useUpdateMyProfile = () =>
       api.put('/stylists/me/profile', data).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stylist-me'] })
+      // Public-facing pages also need to reflect profile changes
+      invalidateStylists()
       toast.success('Profile updated')
     },
     onError: () => toast.error('Failed to update profile'),
@@ -78,6 +95,8 @@ export const useSetMyAvailability = () =>
       api.put('/stylists/me/availability', { slots }).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stylist-me'] })
+      // Customer-facing availability and slot queries must reflect changes immediately
+      invalidateStylists()
       toast.success('Availability saved')
     },
   })
@@ -88,6 +107,7 @@ export const useSetMyServices = () =>
       api.put('/stylists/me/services', { services }).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stylist-me'] })
+      invalidateStylists()
       toast.success('Services updated')
     },
   })
@@ -96,10 +116,8 @@ export const useCreateStylistProfile = () =>
   useMutation({
     mutationFn: (userId: string) => api.post('/stylists/admin/profile', { userId }).then((r) => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-stylists'] })
+      invalidateStylists()
       queryClient.invalidateQueries({ queryKey: ['admin-users'] })
-      queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
-      queryClient.invalidateQueries({ queryKey: ['stylists'] })
       toast.success('Stylist profile created')
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to create profile'),
@@ -109,9 +127,7 @@ export const useToggleStylistAvailability = () =>
   useMutation({
     mutationFn: (id: string) => api.patch(`/stylists/admin/${id}/toggle-availability`).then((r) => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-stylists'] })
-      queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
-      // Public stylist list also needs to reflect availability changes
-      queryClient.invalidateQueries({ queryKey: ['stylists'] })
+      // Invalidates public list + detail + admin list + dashboard stats
+      invalidateStylists()
     },
   })
