@@ -43,6 +43,7 @@ router.put('/me/services',     authenticate, authorize('STYLIST'), validate(SetS
 router.get('/admin/all',       authenticate, authorize('ADMIN'), stylistsController.adminList)
 router.post('/admin/profile',  authenticate, authorize('ADMIN'), stylistsController.createProfile)
 router.patch('/admin/:id/toggle-availability', authenticate, authorize('ADMIN'), stylistsController.toggleAvailability)
+router.delete('/admin/:id',                   authenticate, authorize('ADMIN'), stylistsController.hardDelete)
 
 // ── Public ─────────────────────────────────────────────────────────────────
 router.get('/',           stylistsController.list)

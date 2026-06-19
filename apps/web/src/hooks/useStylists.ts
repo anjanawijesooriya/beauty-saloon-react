@@ -127,7 +127,18 @@ export const useToggleStylistAvailability = () =>
   useMutation({
     mutationFn: (id: string) => api.patch(`/stylists/admin/${id}/toggle-availability`).then((r) => r.data),
     onSuccess: () => {
-      // Invalidates public list + detail + admin list + dashboard stats
       invalidateStylists()
     },
+  })
+
+export const useDeleteStylist = () =>
+  useMutation({
+    mutationFn: (id: string) => api.delete(`/stylists/admin/${id}`),
+    onSuccess: () => {
+      invalidateStylists()
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
+      toast.success('Stylist account permanently deleted')
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to delete stylist account'),
   })

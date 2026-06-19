@@ -183,4 +183,51 @@ export const stylistsService = {
       data: { isAvailable: !profile.isAvailable },
     })
   },
+
+  async hardDelete(stylistProfileId: string) {
+    const profile = await prisma.stylistProfile.findUnique({ where: { id: stylistProfileId } })
+    if (!profile) throw new AppError(404, 'Stylist not found')
+    const userId = profile.userId
+
+    await prisma.$transaction(async (tx) => {
+      // Delete all appointment data where this person was the stylist
+      const stylistAppts = await tx.appointment.findMany({
+        where: { stylistId: stylistProfileId },
+        select: { id: true },
+      })
+      if (stylistAppts.length) {
+        const ids = stylistAppts.map((a) => a.id)
+        await tx.review.deleteMany({ where: { appointmentId: { in: ids } } })
+        await tx.appointmentItem.deleteMany({ where: { appointmentId: { in: ids } } })
+        await tx.appointment.deleteMany({ where: { stylistId: stylistProfileId } })
+      }
+
+      // Delete stylist profile sub-records
+      await tx.availability.deleteMany({ where: { stylistId: stylistProfileId } })
+      await tx.stylistService.deleteMany({ where: { stylistId: stylistProfileId } })
+      await tx.stylistProfile.delete({ where: { id: stylistProfileId } })
+
+      // Delete user-side data (loyalty, customer appointments, orders)
+      const loyalty = await tx.loyaltyPoints.findUnique({ where: { userId } })
+      if (loyalty) {
+        await tx.loyaltyTransaction.deleteMany({ where: { loyaltyId: loyalty.id } })
+        await tx.loyaltyPoints.delete({ where: { userId } })
+      }
+      await tx.review.deleteMany({ where: { customerId: userId } })
+      const customerAppts = await tx.appointment.findMany({ where: { customerId: userId }, select: { id: true } })
+      if (customerAppts.length) {
+        const ids = customerAppts.map((a) => a.id)
+        await tx.appointmentItem.deleteMany({ where: { appointmentId: { in: ids } } })
+        await tx.appointment.deleteMany({ where: { customerId: userId } })
+      }
+      const orders = await tx.order.findMany({ where: { customerId: userId }, select: { id: true } })
+      if (orders.length) {
+        const ids = orders.map((o) => o.id)
+        await tx.orderItem.deleteMany({ where: { orderId: { in: ids } } })
+        await tx.order.deleteMany({ where: { customerId: userId } })
+      }
+
+      await tx.user.delete({ where: { id: userId } })
+    })
+  },
 }

@@ -59,4 +59,9 @@ export const stylistsController = {
   toggleAvailability: h(async (req: Request, res: Response) => {
     res.json(await stylistsService.toggleAvailability(req.params.id))
   }),
+
+  hardDelete: h(async (req: Request, res: Response) => {
+    await stylistsService.hardDelete(req.params.id)
+    res.status(204).send()
+  }),
 }
