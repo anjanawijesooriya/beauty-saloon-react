@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Trash2, Package, X } from 'lucide-react'
-import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts'
+import { Plus, Pencil, Trash2, Package, X, ToggleLeft, ToggleRight } from 'lucide-react'
+import { useAdminProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useToggleProductStatus } from '@/hooks/useProducts'
 import type { Product } from '@/types'
 
 const schema = z.object({
@@ -90,8 +90,9 @@ function ProductModal({ product, onClose }: { product?: Product; onClose: () => 
 
 export default function AdminProductsPage() {
   const [modal, setModal] = useState<'create' | Product | null>(null)
-  const { data, isLoading } = useProducts({ limit: 50 })
+  const { data, isLoading } = useAdminProducts({ limit: 50 })
   const { mutate: remove } = useDeleteProduct()
+  const { mutate: toggleActive, isPending: toggling } = useToggleProductStatus()
 
   return (
     <div>
@@ -142,6 +143,14 @@ export default function AdminProductsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-end">
+                      <button
+                        onClick={() => toggleActive(p.id)}
+                        disabled={toggling}
+                        title={p.isActive ? 'Set Inactive' : 'Set Active'}
+                        className="p-1.5 text-neutral-400 hover:text-brand-500 disabled:opacity-40 transition-colors"
+                      >
+                        {p.isActive ? <ToggleRight size={16} className="text-emerald-500" /> : <ToggleLeft size={16} />}
+                      </button>
                       <button onClick={() => setModal(p)} className="p-1.5 text-neutral-400 hover:text-brand-500 transition-colors"><Pencil size={14} /></button>
                       <button onClick={() => { if (confirm('Remove this product?')) remove(p.id) }} className="p-1.5 text-neutral-400 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
                     </div>

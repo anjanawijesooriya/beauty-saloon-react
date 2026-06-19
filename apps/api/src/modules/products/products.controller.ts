@@ -28,6 +28,24 @@ export const productsController = {
     try { res.json(await productsService.update(req.params.id, req.body)) } catch (err) { next(err) }
   },
 
+  async adminList(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { search, categoryId, minPrice, maxPrice, page, limit } = req.query
+      res.json(await productsService.adminList({
+        search: search as string,
+        categoryId: categoryId as string,
+        minPrice: minPrice ? Number(minPrice) : undefined,
+        maxPrice: maxPrice ? Number(maxPrice) : undefined,
+        page: page ? Number(page) : undefined,
+        limit: limit ? Number(limit) : undefined,
+      }))
+    } catch (err) { next(err) }
+  },
+
+  async toggleActive(req: Request, res: Response, next: NextFunction) {
+    try { res.json(await productsService.toggleActive(req.params.id)) } catch (err) { next(err) }
+  },
+
   async remove(req: Request, res: Response, next: NextFunction) {
     try { res.json(await productsService.remove(req.params.id)) } catch (err) { next(err) }
   },

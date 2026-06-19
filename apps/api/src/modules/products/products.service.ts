@@ -57,9 +57,32 @@ export const productsService = {
     return prisma.product.create({ data: { ...dto, imageUrls: dto.imageUrls ?? [] } })
   },
 
+  async adminList(filters: Omit<ListFilters, 'page' | 'limit'> & { page?: number; limit?: number } = {}) {
+    const { search, categoryId, minPrice, maxPrice, page = 1, limit = 50 } = filters
+    const skip = (page - 1) * limit
+    const where: any = {}
+    if (search) where.name = { contains: search, mode: 'insensitive' }
+    if (categoryId) where.categoryId = categoryId
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      where.priceLKR = {}
+      if (minPrice !== undefined) where.priceLKR.gte = minPrice
+      if (maxPrice !== undefined) where.priceLKR.lte = maxPrice
+    }
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      prisma.product.count({ where }),
+    ])
+    return { products, total, page, limit, totalPages: Math.ceil(total / limit) }
+  },
+
   async update(id: string, dto: Partial<CreateProductDto>) {
     await this.getById(id)
     return prisma.product.update({ where: { id }, data: dto })
+  },
+
+  async toggleActive(id: string) {
+    const product = await this.getById(id)
+    return prisma.product.update({ where: { id }, data: { isActive: !product.isActive } })
   },
 
   async remove(id: string) {

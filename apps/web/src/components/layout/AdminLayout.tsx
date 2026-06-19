@@ -3,6 +3,7 @@ import { RouteOutlet } from "@/components/ui/RouteOutlet";
 import {
   LayoutDashboard,
   Users,
+  UserCog,
   Scissors,
   Calendar,
   ShoppingBag,
@@ -16,6 +17,7 @@ import { useAuthStore } from "@/store/auth";
 
 const navItems = [
   { to: "/admin",              label: "Dashboard",    icon: LayoutDashboard },
+  { to: "/admin/users",        label: "Customers",    icon: UserCog },
   { to: "/admin/services",     label: "Services",     icon: Scissors },
   { to: "/admin/stylists",     label: "Stylists",     icon: Users },
   { to: "/admin/appointments", label: "Appointments", icon: Calendar },

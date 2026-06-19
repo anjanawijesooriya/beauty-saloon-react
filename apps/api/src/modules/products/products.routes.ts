@@ -16,11 +16,12 @@ const CreateSchema = z.object({
 
 const router = Router()
 
-router.get('/',         productsController.list)
-router.get('/:slug',    productsController.getBySlug)
-
-router.post('/',        authenticate, authorize('ADMIN'), validate(CreateSchema),           productsController.create)
-router.put('/:id',      authenticate, authorize('ADMIN'),                                   productsController.update)
-router.delete('/:id',   authenticate, authorize('ADMIN'),                                   productsController.remove)
+router.get('/',                   productsController.list)
+router.get('/admin/all',          authenticate, authorize('ADMIN'),                productsController.adminList)
+router.get('/:slug',              productsController.getBySlug)
+router.post('/',                  authenticate, authorize('ADMIN'), validate(CreateSchema), productsController.create)
+router.put('/:id',                authenticate, authorize('ADMIN'),                         productsController.update)
+router.patch('/:id/toggle-active', authenticate, authorize('ADMIN'),                        productsController.toggleActive)
+router.delete('/:id',             authenticate, authorize('ADMIN'),                         productsController.remove)
 
 export default router

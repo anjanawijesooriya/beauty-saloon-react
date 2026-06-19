@@ -30,6 +30,7 @@ const AdminPromotionsPage  = lazy(() => import('./app/admin/PromotionsPage'))
 const AdminReviewsPage        = lazy(() => import('./app/admin/ReviewsPage'))
 const AdminLoyaltyPage        = lazy(() => import('./app/admin/LoyaltyPage'))
 const AdminAppointmentsPage   = lazy(() => import('./app/admin/AppointmentsPage'))
+const AdminUsersPage          = lazy(() => import('./app/admin/UsersPage'))
 
 // Stylist portal
 const StylistDashboard          = lazy(() => import('./app/(stylist)/StylistDashboardPage'))
@@ -115,6 +116,7 @@ export default function App() {
               <Route path="/admin/reviews"       element={<AdminReviewsPage />} />
               <Route path="/admin/loyalty"       element={<AdminLoyaltyPage />} />
               <Route path="/admin/appointments"  element={<AdminAppointmentsPage />} />
+              <Route path="/admin/users"         element={<AdminUsersPage />} />
             </Route>
           </Route>
       </Routes>

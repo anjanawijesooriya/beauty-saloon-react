@@ -9,6 +9,7 @@ router.use(authenticate)
 router.get('/', authorize('ADMIN'), usersController.list)
 router.get('/:id', authorize('ADMIN'), usersController.getById)
 router.put('/me', usersController.updateMe)
-router.delete('/:id', authorize('ADMIN'), usersController.deactivate)
+router.patch('/:id/toggle-status', authorize('ADMIN'), usersController.toggleStatus)
+router.delete('/:id', authorize('ADMIN'), usersController.hardDelete)
 
 export default router
