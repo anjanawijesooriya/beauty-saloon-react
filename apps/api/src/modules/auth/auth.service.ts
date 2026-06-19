@@ -75,10 +75,10 @@ export const authService = {
 
   async login(dto: LoginDto) {
     const user = await prisma.user.findUnique({ where: { email: dto.email } })
-    if (!user || !user.passwordHash) throw new AppError(401, 'Invalid email or password')
+    if (!user || !user.passwordHash) throw new AppError(404, 'No account found with this email address')
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash)
-    if (!valid) throw new AppError(401, 'Invalid email or password')
+    if (!valid) throw new AppError(401, 'Incorrect password. Please try again.')
 
     if (!user.isActive) throw new AppError(403, 'Account has been deactivated')
 

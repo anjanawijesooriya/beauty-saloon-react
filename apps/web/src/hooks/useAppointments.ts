@@ -4,6 +4,11 @@ import { api } from '@/lib/api'
 import { queryClient } from '@/lib/queryClient'
 import type { Appointment } from '@/types'
 
+function apiError(err: any, fallback: string): string {
+  if (!err?.response) return 'No internet connection. Please check and try again.'
+  return (err?.response?.data?.message as string) || fallback
+}
+
 export const useAppointments = () =>
   useQuery<Appointment[]>({
     queryKey: ['appointments'],
@@ -17,15 +22,14 @@ export const useAppointment = (id: string) =>
     enabled: !!id,
   })
 
+// No onError here — Step4Confirm handles errors directly so it can navigate on 409
 export const useCreateAppointment = () =>
   useMutation({
     mutationFn: (dto: { stylistId: string; serviceIds: string[]; startsAt: string; notes?: string }) =>
       api.post('/appointments', dto).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] })
-      toast.success('Appointment booked successfully!')
     },
-    onError: () => toast.error('Failed to book appointment'),
   })
 
 export const useCancelAppointment = () =>
@@ -36,6 +40,7 @@ export const useCancelAppointment = () =>
       queryClient.invalidateQueries({ queryKey: ['appointments'] })
       toast.success('Appointment cancelled')
     },
+    onError: (err: any) => toast.error(apiError(err, 'Failed to cancel appointment')),
   })
 
 export const useAdminAppointments = () =>
@@ -51,7 +56,7 @@ export const useAdminConfirm = () =>
       queryClient.invalidateQueries({ queryKey: ['admin-appointments'] })
       toast.success('Appointment confirmed')
     },
-    onError: () => toast.error('Failed to confirm'),
+    onError: (err: any) => toast.error(apiError(err, 'Failed to confirm appointment')),
   })
 
 export const useAdminComplete = () =>
@@ -59,9 +64,9 @@ export const useAdminComplete = () =>
     mutationFn: (id: string) => api.patch(`/appointments/${id}/complete`).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-appointments'] })
-      toast.success('Appointment marked complete')
+      toast.success('Appointment marked as completed')
     },
-    onError: () => toast.error('Failed to complete'),
+    onError: (err: any) => toast.error(apiError(err, 'Failed to mark appointment as completed')),
   })
 
 export const useStylistConfirm = () =>
@@ -71,7 +76,7 @@ export const useStylistConfirm = () =>
       queryClient.invalidateQueries({ queryKey: ['appointments'] })
       toast.success('Appointment confirmed')
     },
-    onError: () => toast.error('Failed to confirm'),
+    onError: (err: any) => toast.error(apiError(err, 'Failed to confirm appointment')),
   })
 
 export const useStylistComplete = () =>
@@ -79,7 +84,7 @@ export const useStylistComplete = () =>
     mutationFn: (id: string) => api.patch(`/appointments/${id}/complete`).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] })
-      toast.success('Appointment marked complete')
+      toast.success('Appointment marked as completed')
     },
-    onError: () => toast.error('Failed to complete'),
+    onError: (err: any) => toast.error(apiError(err, 'Failed to mark appointment as completed')),
   })
