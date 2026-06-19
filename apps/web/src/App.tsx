@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
 import CustomerLayout from './components/layout/CustomerLayout'
 import AdminLayout from './components/layout/AdminLayout'
 import StylistLayout from './components/layout/StylistLayout'
@@ -65,9 +64,8 @@ export default function App() {
   if (!initialized) return <Spinner />
 
   return (
-    <AnimatePresence mode="wait">
-      <Suspense fallback={<Spinner />}>
-        <Routes>
+    <Suspense fallback={<Spinner />}>
+      <Routes>
           {/* Auth pages — no layout */}
           <Route path="/login"    element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -119,8 +117,7 @@ export default function App() {
               <Route path="/admin/appointments"  element={<AdminAppointmentsPage />} />
             </Route>
           </Route>
-        </Routes>
-      </Suspense>
-    </AnimatePresence>
+      </Routes>
+    </Suspense>
   )
 }

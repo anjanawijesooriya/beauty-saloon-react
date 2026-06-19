@@ -1,4 +1,5 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { RouteOutlet } from '@/components/ui/RouteOutlet'
 import { useAuthStore } from '@/store/auth'
 import { useThemeStore } from '@/store/theme'
 import { useCartStore } from '@/store/cart'
@@ -66,7 +67,7 @@ export default function CustomerLayout() {
         </div>
       </header>
       <main className="min-h-[calc(100vh-4rem)]">
-        <Outlet />
+        <RouteOutlet />
       </main>
       <footer className="bg-brand-900 text-brand-100 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm">

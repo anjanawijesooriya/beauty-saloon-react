@@ -1,4 +1,5 @@
-import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { RouteOutlet } from "@/components/ui/RouteOutlet";
 import {
   LayoutDashboard,
   Users,
@@ -95,7 +96,7 @@ export default function AdminLayout() {
           </span>
         </header>
         <main className="flex-1 p-6 overflow-auto">
-          <Outlet />
+          <RouteOutlet />
         </main>
       </div>
     </div>
