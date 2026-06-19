@@ -13,7 +13,7 @@ export default function CustomerLayout() {
 
   const handleLogout = () => {
     logout()
-    navigate('/')
+    navigate('/login')
   }
 
   return (

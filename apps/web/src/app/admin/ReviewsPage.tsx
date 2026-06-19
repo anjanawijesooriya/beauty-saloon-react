@@ -1,10 +1,14 @@
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { Star, Eye, EyeOff } from 'lucide-react'
 import { useAdminReviews, useToggleReviewVisibility } from '@/hooks/useReviews'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import type { Review } from '@/hooks/useReviews'
 
 export default function AdminReviewsPage() {
   const { data: reviews, isLoading } = useAdminReviews()
-  const { mutate: toggle } = useToggleReviewVisibility()
+  const { mutate: toggle, isPending: toggling } = useToggleReviewVisibility()
+  const [toggleTarget, setToggleTarget] = useState<Review | null>(null)
 
   return (
     <div>
@@ -51,7 +55,7 @@ export default function AdminReviewsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => toggle(review.id)}
+                      onClick={() => setToggleTarget(review)}
                       className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${
                         review.isHidden
                           ? 'bg-neutral-100 text-neutral-400 border-neutral-200 hover:bg-neutral-200'
@@ -66,6 +70,22 @@ export default function AdminReviewsPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {toggleTarget && (
+        <ConfirmModal
+          variant="warning"
+          title={toggleTarget.isHidden ? 'Make review visible?' : 'Hide this review?'}
+          description={
+            toggleTarget.isHidden
+              ? `This review by ${toggleTarget.customer.name} will become publicly visible on the stylist's profile.`
+              : `This review by ${toggleTarget.customer.name} will be hidden from all public views.`
+          }
+          confirmLabel={toggleTarget.isHidden ? 'Yes, make visible' : 'Yes, hide review'}
+          isPending={toggling}
+          onConfirm={() => toggle(toggleTarget.id, { onSuccess: () => setToggleTarget(null) })}
+          onClose={() => setToggleTarget(null)}
+        />
       )}
     </div>
   )

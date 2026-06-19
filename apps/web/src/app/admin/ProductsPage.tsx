@@ -4,7 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Pencil, Trash2, Package, X, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useAdminProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useToggleProductStatus } from '@/hooks/useProducts'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { Product } from '@/types'
+
+type PendingAction = { type: 'toggle'; product: Product } | { type: 'delete'; product: Product }
 
 const schema = z.object({
   name:        z.string().min(2).max(200),
@@ -90,8 +93,9 @@ function ProductModal({ product, onClose }: { product?: Product; onClose: () => 
 
 export default function AdminProductsPage() {
   const [modal, setModal] = useState<'create' | Product | null>(null)
+  const [pending, setPending] = useState<PendingAction | null>(null)
   const { data, isLoading } = useAdminProducts({ limit: 50 })
-  const { mutate: remove } = useDeleteProduct()
+  const { mutate: remove, isPending: deleting } = useDeleteProduct()
   const { mutate: toggleActive, isPending: toggling } = useToggleProductStatus()
 
   return (
@@ -144,15 +148,14 @@ export default function AdminProductsPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-end">
                       <button
-                        onClick={() => toggleActive(p.id)}
-                        disabled={toggling}
+                        onClick={() => setPending({ type: 'toggle', product: p })}
                         title={p.isActive ? 'Set Inactive' : 'Set Active'}
-                        className="p-1.5 text-neutral-400 hover:text-brand-500 disabled:opacity-40 transition-colors"
+                        className="p-1.5 text-neutral-400 hover:text-brand-500 transition-colors"
                       >
                         {p.isActive ? <ToggleRight size={16} className="text-emerald-500" /> : <ToggleLeft size={16} />}
                       </button>
                       <button onClick={() => setModal(p)} className="p-1.5 text-neutral-400 hover:text-brand-500 transition-colors"><Pencil size={14} /></button>
-                      <button onClick={() => { if (confirm('Remove this product?')) remove(p.id) }} className="p-1.5 text-neutral-400 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                      <button onClick={() => setPending({ type: 'delete', product: p })} className="p-1.5 text-neutral-400 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -166,6 +169,34 @@ export default function AdminProductsPage() {
         <ProductModal
           product={modal === 'create' ? undefined : modal as Product}
           onClose={() => setModal(null)}
+        />
+      )}
+
+      {pending?.type === 'toggle' && (
+        <ConfirmModal
+          variant="warning"
+          title={pending.product.isActive ? 'Set product to Inactive?' : 'Set product to Active?'}
+          description={
+            pending.product.isActive
+              ? `"${pending.product.name}" will be hidden from the customer shop.`
+              : `"${pending.product.name}" will become visible and purchasable in the shop.`
+          }
+          confirmLabel={pending.product.isActive ? 'Yes, set inactive' : 'Yes, set active'}
+          isPending={toggling}
+          onConfirm={() => toggleActive(pending.product.id, { onSuccess: () => setPending(null) })}
+          onClose={() => setPending(null)}
+        />
+      )}
+
+      {pending?.type === 'delete' && (
+        <ConfirmModal
+          variant="danger"
+          title={`Remove "${pending.product.name}"?`}
+          description="This product will be permanently deactivated and hidden from all customers."
+          confirmLabel="Yes, remove product"
+          isPending={deleting}
+          onConfirm={() => remove(pending.product.id, { onSuccess: () => setPending(null) })}
+          onClose={() => setPending(null)}
         />
       )}
     </div>

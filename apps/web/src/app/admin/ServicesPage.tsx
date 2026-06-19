@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Pencil, Trash2, Clock, X } from 'lucide-react'
 import { useServices, useServiceCategories, useCreateService, useUpdateService, useDeleteService } from '@/hooks/useServices'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { Service } from '@/types'
 
 const schema = z.object({
@@ -131,16 +132,11 @@ function ServiceModal({
 
 export default function AdminServicesPage() {
   const [modal, setModal] = useState<{ open: boolean; service?: Service }>({ open: false })
+  const [deleteTarget, setDeleteTarget] = useState<Service | null>(null)
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>()
   const { data, isLoading } = useServices({ categoryId: categoryFilter, limit: 50 })
   const { data: categories } = useServiceCategories()
-  const { mutate: deleteService } = useDeleteService()
-
-  const handleDelete = (service: Service) => {
-    if (confirm(`Remove "${service.name}"? It will be hidden from customers.`)) {
-      deleteService(service.id)
-    }
-  }
+  const { mutate: deleteService, isPending: deleting } = useDeleteService()
 
   return (
     <div>
@@ -224,7 +220,7 @@ export default function AdminServicesPage() {
                           <Pencil size={15} />
                         </button>
                         <button
-                          onClick={() => handleDelete(service)}
+                          onClick={() => setDeleteTarget(service)}
                           className="p-1.5 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <Trash2 size={15} />
@@ -246,6 +242,18 @@ export default function AdminServicesPage() {
 
       {modal.open && (
         <ServiceModal service={modal.service} onClose={() => setModal({ open: false })} />
+      )}
+
+      {deleteTarget && (
+        <ConfirmModal
+          variant="danger"
+          title={`Remove "${deleteTarget.name}"?`}
+          description="This service will be hidden from customers and removed from all stylist offerings."
+          confirmLabel="Yes, remove service"
+          isPending={deleting}
+          onConfirm={() => deleteService(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) })}
+          onClose={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   )

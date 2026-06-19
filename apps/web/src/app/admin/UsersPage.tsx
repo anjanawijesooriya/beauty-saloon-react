@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import { Users, UserCheck, UserX, Trash2, Search } from 'lucide-react'
 import { useAdminUsers, useToggleUserStatus, useDeleteUser } from '@/hooks/useUsers'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { AdminUser } from '@/hooks/useUsers'
+
+type PendingAction =
+  | { type: 'toggle'; user: AdminUser }
+  | { type: 'delete'; user: AdminUser }
 
 function StatusBadge({ isActive }: { isActive: boolean }) {
   return (
@@ -17,21 +22,24 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
 
 export default function AdminUsersPage() {
   const [search, setSearch] = useState('')
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [pending, setPending] = useState<PendingAction | null>(null)
 
   const { data, isLoading } = useAdminUsers('CUSTOMER')
   const { mutate: toggleStatus, isPending: toggling } = useToggleUserStatus()
   const { mutate: deleteUser, isPending: deleting } = useDeleteUser()
 
-  const filtered = data?.users.filter((u) =>
+  const filtered = (data?.users ?? []).filter((u) =>
     u.name.toLowerCase().includes(search.toLowerCase()) ||
     u.email.toLowerCase().includes(search.toLowerCase())
-  ) ?? []
+  )
 
-  const handleDelete = (id: string) => {
-    deleteUser(id, {
-      onSuccess: () => setConfirmDelete(null),
-    })
+  const handleConfirm = () => {
+    if (!pending) return
+    if (pending.type === 'toggle') {
+      toggleStatus(pending.user.id, { onSuccess: () => setPending(null) })
+    } else {
+      deleteUser(pending.user.id, { onSuccess: () => setPending(null) })
+    }
   }
 
   return (
@@ -46,7 +54,7 @@ export default function AdminUsersPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or email..."
+            placeholder="Search by name or email…"
             className="pl-9 pr-4 py-2 text-sm rounded-xl border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-brand-300 w-64"
           />
         </div>
@@ -79,98 +87,77 @@ export default function AdminUsersPage() {
                   </td>
                 </tr>
               ) : filtered.map((user) => (
-                <UserRow
-                  key={user.id}
-                  user={user}
-                  toggling={toggling}
-                  deleting={deleting}
-                  confirmDelete={confirmDelete}
-                  onToggle={() => toggleStatus(user.id)}
-                  onConfirmDelete={() => setConfirmDelete(user.id)}
-                  onCancelDelete={() => setConfirmDelete(null)}
-                  onDelete={() => handleDelete(user.id)}
-                />
+                <tr key={user.id} className="hover:bg-neutral-50 transition-colors">
+                  <td className="px-6 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-semibold text-sm flex-shrink-0">
+                        {user.name[0]?.toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-neutral-800">{user.name}</p>
+                        <p className="text-xs text-neutral-400">{user.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-neutral-600">{user.phone || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-500">
+                    {new Date(user.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </td>
+                  <td className="px-4 py-3">
+                    <StatusBadge isActive={user.isActive} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1 justify-end">
+                      <button
+                        onClick={() => setPending({ type: 'toggle', user })}
+                        title={user.isActive ? 'Deactivate account' : 'Activate account'}
+                        className="p-1.5 text-neutral-400 hover:text-brand-500 transition-colors"
+                      >
+                        {user.isActive ? <UserX size={15} /> : <UserCheck size={15} />}
+                      </button>
+                      <button
+                        onClick={() => setPending({ type: 'delete', user })}
+                        title="Delete account"
+                        className="p-1.5 text-neutral-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      {pending?.type === 'toggle' && (
+        <ConfirmModal
+          variant="warning"
+          title={pending.user.isActive ? 'Deactivate account?' : 'Activate account?'}
+          description={
+            pending.user.isActive
+              ? `${pending.user.name} will no longer be able to log in or make bookings.`
+              : `${pending.user.name} will regain access to their account.`
+          }
+          confirmLabel={pending.user.isActive ? 'Yes, deactivate' : 'Yes, activate'}
+          isPending={toggling}
+          onConfirm={handleConfirm}
+          onClose={() => setPending(null)}
+        />
+      )}
+
+      {pending?.type === 'delete' && (
+        <ConfirmModal
+          variant="danger"
+          title="Delete account permanently?"
+          description={`This will remove ${pending.user.name}'s account along with all their appointments, orders, and reviews. This cannot be undone.`}
+          confirmLabel="Yes, delete permanently"
+          isPending={deleting}
+          onConfirm={handleConfirm}
+          onClose={() => setPending(null)}
+        />
+      )}
     </div>
-  )
-}
-
-interface UserRowProps {
-  user: AdminUser
-  toggling: boolean
-  deleting: boolean
-  confirmDelete: string | null
-  onToggle: () => void
-  onConfirmDelete: () => void
-  onCancelDelete: () => void
-  onDelete: () => void
-}
-
-function UserRow({ user, toggling, deleting, confirmDelete, onToggle, onConfirmDelete, onCancelDelete, onDelete }: UserRowProps) {
-  const isConfirming = confirmDelete === user.id
-
-  return (
-    <tr className="hover:bg-neutral-50 transition-colors">
-      <td className="px-6 py-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-semibold text-sm flex-shrink-0">
-            {user.name[0]?.toUpperCase()}
-          </div>
-          <div>
-            <p className="text-sm font-medium text-neutral-800">{user.name}</p>
-            <p className="text-xs text-neutral-400">{user.email}</p>
-          </div>
-        </div>
-      </td>
-      <td className="px-4 py-3 text-sm text-neutral-600">{user.phone || '—'}</td>
-      <td className="px-4 py-3 text-sm text-neutral-500">
-        {new Date(user.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-      </td>
-      <td className="px-4 py-3">
-        <StatusBadge isActive={user.isActive} />
-      </td>
-      <td className="px-4 py-3">
-        {isConfirming ? (
-          <div className="flex items-center gap-2 justify-end text-sm">
-            <span className="text-neutral-500 text-xs">Delete permanently?</span>
-            <button
-              onClick={onDelete}
-              disabled={deleting}
-              className="px-2.5 py-1 bg-red-500 text-white rounded-lg text-xs font-medium hover:bg-red-600 disabled:opacity-60 transition-colors"
-            >
-              {deleting ? 'Deleting...' : 'Yes, delete'}
-            </button>
-            <button
-              onClick={onCancelDelete}
-              className="px-2.5 py-1 border border-neutral-200 rounded-lg text-xs text-neutral-600 hover:bg-neutral-50 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1 justify-end">
-            <button
-              onClick={onToggle}
-              disabled={toggling}
-              title={user.isActive ? 'Deactivate account' : 'Activate account'}
-              className="p-1.5 text-neutral-400 hover:text-brand-500 disabled:opacity-40 transition-colors"
-            >
-              {user.isActive ? <UserX size={15} /> : <UserCheck size={15} />}
-            </button>
-            <button
-              onClick={onConfirmDelete}
-              title="Delete account"
-              className="p-1.5 text-neutral-400 hover:text-red-500 transition-colors"
-            >
-              <Trash2 size={15} />
-            </button>
-          </div>
-        )}
-      </td>
-    </tr>
   )
 }

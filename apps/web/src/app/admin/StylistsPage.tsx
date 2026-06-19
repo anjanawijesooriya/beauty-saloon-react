@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Star, ToggleLeft, ToggleRight, UserPlus } from 'lucide-react'
 import { useAdminStylists, useToggleStylistAvailability, useCreateStylistProfile } from '@/hooks/useStylists'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import type { StylistProfile } from '@/types'
 
 function PromoteModal({ onClose }: { onClose: () => void }) {
   const [userId, setUserId] = useState('')
@@ -53,8 +55,9 @@ function PromoteModal({ onClose }: { onClose: () => void }) {
 
 export default function AdminStylistsPage() {
   const { data: stylists, isLoading } = useAdminStylists()
-  const { mutate: toggle } = useToggleStylistAvailability()
+  const { mutate: toggle, isPending: toggling } = useToggleStylistAvailability()
   const [showPromote, setShowPromote] = useState(false)
+  const [toggleTarget, setToggleTarget] = useState<StylistProfile | null>(null)
 
   return (
     <div>
@@ -126,7 +129,7 @@ export default function AdminStylistsPage() {
                     </td>
                     <td className="px-5 py-4">
                       <button
-                        onClick={() => toggle(stylist.id)}
+                        onClick={() => setToggleTarget(stylist)}
                         className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
                           stylist.isAvailable ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
                         }`}
@@ -148,6 +151,22 @@ export default function AdminStylistsPage() {
       </div>
 
       {showPromote && <PromoteModal onClose={() => setShowPromote(false)} />}
+
+      {toggleTarget && (
+        <ConfirmModal
+          variant="warning"
+          title={toggleTarget.isAvailable ? 'Set stylist as Unavailable?' : 'Set stylist as Available?'}
+          description={
+            toggleTarget.isAvailable
+              ? `${toggleTarget.user.name} will not appear for new bookings until re-enabled.`
+              : `${toggleTarget.user.name} will be visible to customers and open for bookings.`
+          }
+          confirmLabel={toggleTarget.isAvailable ? 'Yes, set unavailable' : 'Yes, set available'}
+          isPending={toggling}
+          onConfirm={() => toggle(toggleTarget.id, { onSuccess: () => setToggleTarget(null) })}
+          onClose={() => setToggleTarget(null)}
+        />
+      )}
     </div>
   )
 }
