@@ -9,6 +9,15 @@ function apiError(err: any, fallback: string): string {
   return (err?.response?.data?.message as string) || fallback
 }
 
+// Invalidate every cache key that might show appointment data
+function invalidateAll() {
+  queryClient.invalidateQueries({ queryKey: ['appointments'] })
+  queryClient.invalidateQueries({ queryKey: ['admin-appointments'] })
+  queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
+}
+
+// ── Customer / Stylist queries ─────────────────────────────────────────────
+
 export const useAppointments = () =>
   useQuery<Appointment[]>({
     queryKey: ['appointments'],
@@ -22,14 +31,24 @@ export const useAppointment = (id: string) =>
     enabled: !!id,
   })
 
-// No onError here — Step4Confirm handles errors directly so it can navigate on 409
+// ── Admin queries (polled every 30 s) ─────────────────────────────────────
+
+export const useAdminAppointments = () =>
+  useQuery<Appointment[]>({
+    queryKey: ['admin-appointments'],
+    queryFn: () => api.get('/appointments').then((r) => r.data),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+  })
+
+// ── Mutations ──────────────────────────────────────────────────────────────
+
+// No hook-level onError — Step4Confirm owns that logic (needs 409 → back to step 3)
 export const useCreateAppointment = () =>
   useMutation({
     mutationFn: (dto: { stylistId: string; serviceIds: string[]; startsAt: string; notes?: string }) =>
       api.post('/appointments', dto).then((r) => r.data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments'] })
-    },
+    onSuccess: () => invalidateAll(),
   })
 
 export const useCancelAppointment = () =>
@@ -37,23 +56,17 @@ export const useCancelAppointment = () =>
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       api.patch(`/appointments/${id}/cancel`, { reason }).then((r) => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments'] })
+      invalidateAll()
       toast.success('Appointment cancelled')
     },
     onError: (err: any) => toast.error(apiError(err, 'Failed to cancel appointment')),
-  })
-
-export const useAdminAppointments = () =>
-  useQuery<Appointment[]>({
-    queryKey: ['admin-appointments'],
-    queryFn: () => api.get('/appointments').then((r) => r.data),
   })
 
 export const useAdminConfirm = () =>
   useMutation({
     mutationFn: (id: string) => api.patch(`/appointments/${id}/confirm`).then((r) => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-appointments'] })
+      invalidateAll()
       toast.success('Appointment confirmed')
     },
     onError: (err: any) => toast.error(apiError(err, 'Failed to confirm appointment')),
@@ -63,7 +76,7 @@ export const useAdminComplete = () =>
   useMutation({
     mutationFn: (id: string) => api.patch(`/appointments/${id}/complete`).then((r) => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-appointments'] })
+      invalidateAll()
       toast.success('Appointment marked as completed')
     },
     onError: (err: any) => toast.error(apiError(err, 'Failed to mark appointment as completed')),
@@ -73,7 +86,7 @@ export const useStylistConfirm = () =>
   useMutation({
     mutationFn: (id: string) => api.patch(`/appointments/${id}/confirm`).then((r) => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments'] })
+      invalidateAll()
       toast.success('Appointment confirmed')
     },
     onError: (err: any) => toast.error(apiError(err, 'Failed to confirm appointment')),
@@ -83,7 +96,7 @@ export const useStylistComplete = () =>
   useMutation({
     mutationFn: (id: string) => api.patch(`/appointments/${id}/complete`).then((r) => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments'] })
+      invalidateAll()
       toast.success('Appointment marked as completed')
     },
     onError: (err: any) => toast.error(apiError(err, 'Failed to mark appointment as completed')),

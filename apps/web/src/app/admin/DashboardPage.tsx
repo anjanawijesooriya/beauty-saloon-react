@@ -67,6 +67,8 @@ export default function AdminDashboard() {
   const { data: stats, isLoading } = useQuery<AdminStats>({
     queryKey: ['admin-stats'],
     queryFn: () => api.get('/appointments/admin/stats').then((r) => r.data),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   })
 
   if (isLoading) {

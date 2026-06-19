@@ -55,6 +55,8 @@ export const useAdminStylists = () =>
   useQuery<StylistProfile[]>({
     queryKey: ['admin-stylists'],
     queryFn: () => api.get('/stylists/admin/all').then((r) => r.data),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   })
 
 // ── Mutations ──────────────────────────────────────────────────────────────
@@ -96,6 +98,8 @@ export const useCreateStylistProfile = () =>
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-stylists'] })
       queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['stylists'] })
       toast.success('Stylist profile created')
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to create profile'),
@@ -104,5 +108,10 @@ export const useCreateStylistProfile = () =>
 export const useToggleStylistAvailability = () =>
   useMutation({
     mutationFn: (id: string) => api.patch(`/stylists/admin/${id}/toggle-availability`).then((r) => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-stylists'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-stylists'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
+      // Public stylist list also needs to reflect availability changes
+      queryClient.invalidateQueries({ queryKey: ['stylists'] })
+    },
   })
