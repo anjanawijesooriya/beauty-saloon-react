@@ -1,7 +1,15 @@
+import { useState } from 'react'
 import { format } from 'date-fns'
-import { Star, MessageSquare } from 'lucide-react'
-import { useMyProfile } from '@/hooks/useStylists'
-import { useStylistReviews } from '@/hooks/useReviews'
+import { Star, MessageSquare, Eye, EyeOff, Trash2 } from 'lucide-react'
+import {
+  useMyReviews,
+  useStylistToggleReviewVisibility,
+  useDeleteStylistReview,
+} from '@/hooks/useReviews'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import type { Review } from '@/hooks/useReviews'
+
+type ReviewAction = { type: 'toggle' | 'delete'; review: Review }
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -18,19 +26,29 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default function StylistReviewsPage() {
-  const { data: profile, isLoading: profileLoading } = useMyProfile()
-  const { data: reviews = [], isLoading: reviewsLoading } = useStylistReviews(profile?.id ?? '')
+  const { data: reviews = [], isLoading } = useMyReviews()
+  const { mutate: toggleVisibility, isPending: toggling } = useStylistToggleReviewVisibility()
+  const { mutate: deleteReview, isPending: deleting } = useDeleteStylistReview()
+  const [action, setAction] = useState<ReviewAction | null>(null)
 
-  const isLoading = profileLoading || reviewsLoading
+  const visibleReviews = reviews.filter((r) => !r.isHidden)
+  const avgRating = visibleReviews.length
+    ? visibleReviews.reduce((s, r) => s + r.rating, 0) / visibleReviews.length
+    : 0
 
   const ratingBreakdown = [5, 4, 3, 2, 1].map((star) => ({
     star,
-    count: reviews.filter((r) => r.rating === star).length,
+    count: visibleReviews.filter((r) => r.rating === star).length,
   }))
 
-  const avgRating = reviews.length
-    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
-    : 0
+  const handleConfirm = () => {
+    if (!action) return
+    if (action.type === 'toggle') {
+      toggleVisibility(action.review.id, { onSuccess: () => setAction(null) })
+    } else {
+      deleteReview(action.review.id, { onSuccess: () => setAction(null) })
+    }
+  }
 
   if (isLoading) {
     return (
@@ -53,7 +71,9 @@ export default function StylistReviewsPage() {
         <div className="text-center sm:border-r sm:border-neutral-100 sm:pr-6 flex-shrink-0">
           <p className="text-5xl font-bold text-neutral-900">{avgRating.toFixed(1)}</p>
           <Stars rating={Math.round(avgRating)} />
-          <p className="text-xs text-neutral-400 mt-2">{reviews.length} review{reviews.length !== 1 ? 's' : ''}</p>
+          <p className="text-xs text-neutral-400 mt-2">
+            {visibleReviews.length} visible · {reviews.length} total
+          </p>
         </div>
         <div className="flex-1 space-y-2">
           {ratingBreakdown.map(({ star, count }) => (
@@ -63,7 +83,7 @@ export default function StylistReviewsPage() {
               <div className="flex-1 h-2 bg-neutral-100 rounded-full overflow-hidden">
                 <div
                   className="h-full gradient-brand rounded-full transition-all"
-                  style={{ width: reviews.length ? `${(count / reviews.length) * 100}%` : '0%' }}
+                  style={{ width: visibleReviews.length ? `${(count / visibleReviews.length) * 100}%` : '0%' }}
                 />
               </div>
               <span className="text-xs text-neutral-400 w-4">{count}</span>
@@ -82,18 +102,44 @@ export default function StylistReviewsPage() {
       ) : (
         <div className="space-y-3">
           {reviews.map((review) => (
-            <div key={review.id} className="bg-white rounded-2xl shadow-card p-5">
+            <div
+              key={review.id}
+              className={`bg-white rounded-2xl shadow-card p-5 transition-opacity ${review.isHidden ? 'opacity-60' : ''}`}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full gradient-brand flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                     {review.customer.name[0]}
                   </div>
                   <div>
-                    <p className="font-medium text-neutral-900 text-sm">{review.customer.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-neutral-900 text-sm">{review.customer.name}</p>
+                      {review.isHidden && (
+                        <span className="text-xs bg-neutral-100 text-neutral-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <EyeOff size={10} /> Hidden
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-neutral-400">{format(new Date(review.createdAt), 'd MMM yyyy')}</p>
                   </div>
                 </div>
-                <Stars rating={review.rating} />
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Stars rating={review.rating} />
+                  <button
+                    onClick={() => setAction({ type: 'toggle', review })}
+                    title={review.isHidden ? 'Make visible' : 'Hide review'}
+                    className="p-1.5 text-neutral-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
+                  >
+                    {review.isHidden ? <Eye size={15} /> : <EyeOff size={15} />}
+                  </button>
+                  <button
+                    onClick={() => setAction({ type: 'delete', review })}
+                    title="Delete review"
+                    className="p-1.5 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
               {review.comment && (
                 <p className="mt-3 text-sm text-neutral-600 leading-relaxed pl-12">{review.comment}</p>
@@ -101,6 +147,36 @@ export default function StylistReviewsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {action && (
+        <ConfirmModal
+          variant={action.type === 'delete' ? 'danger' : 'warning'}
+          title={
+            action.type === 'delete'
+              ? 'Delete this review?'
+              : action.review.isHidden
+              ? 'Make this review visible?'
+              : 'Hide this review?'
+          }
+          description={
+            action.type === 'delete'
+              ? `This will permanently remove the review by ${action.review.customer.name}. This cannot be undone.`
+              : action.review.isHidden
+              ? `The review by ${action.review.customer.name} will appear publicly on your profile.`
+              : `The review by ${action.review.customer.name} will be hidden from your public profile.`
+          }
+          confirmLabel={
+            action.type === 'delete'
+              ? 'Yes, delete'
+              : action.review.isHidden
+              ? 'Yes, make visible'
+              : 'Yes, hide'
+          }
+          isPending={toggling || deleting}
+          onConfirm={handleConfirm}
+          onClose={() => setAction(null)}
+        />
       )}
     </div>
   )

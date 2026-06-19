@@ -14,6 +14,18 @@ export const reviewsController = {
     try { res.json(await reviewsService.adminList()) } catch (err) { next(err) }
   },
 
+  async myReviews(req: Request, res: Response, next: NextFunction) {
+    try { res.json(await reviewsService.myReviews(req.user.sub)) } catch (err) { next(err) }
+  },
+
+  async stylistToggleHide(req: Request, res: Response, next: NextFunction) {
+    try { res.json(await reviewsService.stylistToggleHide(req.params.id, req.user.sub)) } catch (err) { next(err) }
+  },
+
+  async stylistDelete(req: Request, res: Response, next: NextFunction) {
+    try { await reviewsService.stylistDelete(req.params.id, req.user.sub); res.status(204).send() } catch (err) { next(err) }
+  },
+
   async toggleHide(req: Request, res: Response, next: NextFunction) {
     try { res.json(await reviewsService.toggleHide(req.params.id)) } catch (err) { next(err) }
   },

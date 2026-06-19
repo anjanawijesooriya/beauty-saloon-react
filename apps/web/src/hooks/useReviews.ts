@@ -6,13 +6,21 @@ import { queryClient } from '@/lib/queryClient'
 export interface Review {
   id: string
   customerId: string
-  customer: { name: string; avatarUrl?: string }
+  customer: { name: string; avatarUrl?: string; email?: string }
   stylistId: string
   appointmentId: string
+  appointment?: { startsAt: string; stylist?: { user: { name: string } } }
   rating: number
   comment?: string
   isHidden: boolean
   createdAt: string
+}
+
+function invalidateReviews() {
+  queryClient.invalidateQueries({ queryKey: ['reviews'] })
+  queryClient.invalidateQueries({ queryKey: ['admin-reviews'] })
+  queryClient.invalidateQueries({ queryKey: ['stylists'] })
+  queryClient.invalidateQueries({ queryKey: ['admin-stylists'] })
 }
 
 // ── Queries ────────────────────────────────────────────────────────────────
@@ -26,8 +34,16 @@ export const useStylistReviews = (stylistId: string) =>
     refetchOnWindowFocus: true,
   })
 
+export const useMyReviews = () =>
+  useQuery<Review[]>({
+    queryKey: ['reviews', 'me'],
+    queryFn: () => api.get('/reviews/stylist/me').then((r) => r.data),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+  })
+
 export const useAdminReviews = () =>
-  useQuery<(Review & { appointment: { startsAt: string }; customer: { email: string; name: string } })[]>({
+  useQuery<Review[]>({
     queryKey: ['admin-reviews'],
     queryFn: () => api.get('/reviews/admin/all').then((r) => r.data),
     refetchInterval: 30_000,
@@ -41,12 +57,8 @@ export const useCreateReview = () =>
     mutationFn: (dto: { appointmentId: string; stylistId: string; rating: number; comment?: string }) =>
       api.post('/reviews', dto).then((r) => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reviews'] })
-      queryClient.invalidateQueries({ queryKey: ['admin-reviews'] })
+      invalidateReviews()
       queryClient.invalidateQueries({ queryKey: ['appointments'] })
-      // Stylist rating/reviewCount updates on the public profile
-      queryClient.invalidateQueries({ queryKey: ['stylists'] })
-      queryClient.invalidateQueries({ queryKey: ['admin-stylists'] })
       toast.success('Review submitted!')
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to submit review'),
@@ -55,10 +67,25 @@ export const useCreateReview = () =>
 export const useToggleReviewVisibility = () =>
   useMutation({
     mutationFn: (id: string) => api.patch(`/reviews/admin/${id}/toggle`).then((r) => r.data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-reviews'] })
-      // Hidden/visible reviews affect public stylist profile
-      queryClient.invalidateQueries({ queryKey: ['reviews'] })
-      queryClient.invalidateQueries({ queryKey: ['stylists'] })
+    onSuccess: () => invalidateReviews(),
+  })
+
+export const useStylistToggleReviewVisibility = () =>
+  useMutation({
+    mutationFn: (id: string) => api.patch(`/reviews/stylist/me/${id}/toggle`).then((r) => r.data),
+    onSuccess: (data: Review) => {
+      invalidateReviews()
+      toast.success(data.isHidden ? 'Review hidden' : 'Review is now visible')
     },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to update review'),
+  })
+
+export const useDeleteStylistReview = () =>
+  useMutation({
+    mutationFn: (id: string) => api.delete(`/reviews/stylist/me/${id}`),
+    onSuccess: () => {
+      invalidateReviews()
+      toast.success('Review deleted')
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to delete review'),
   })

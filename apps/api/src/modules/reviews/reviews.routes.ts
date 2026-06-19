@@ -13,6 +13,11 @@ const CreateSchema = z.object({
 
 const router = Router()
 
+// Stylist self-management (must come before /stylist/:stylistId)
+router.get('/stylist/me',              authenticate, authorize('STYLIST'), reviewsController.myReviews)
+router.patch('/stylist/me/:id/toggle', authenticate, authorize('STYLIST'), reviewsController.stylistToggleHide)
+router.delete('/stylist/me/:id',       authenticate, authorize('STYLIST'), reviewsController.stylistDelete)
+
 router.get('/stylist/:stylistId',  reviewsController.byStylist)
 router.get('/admin/all',           authenticate, authorize('ADMIN'), reviewsController.adminList)
 router.patch('/admin/:id/toggle',  authenticate, authorize('ADMIN'), reviewsController.toggleHide)

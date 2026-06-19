@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import { CalendarCheck, Clock, CheckCheck, XCircle } from 'lucide-react'
 import { useAppointments, useStylistConfirm, useStylistComplete, useCancelAppointment } from '@/hooks/useAppointments'
-import type { AppointmentStatus } from '@/types'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import type { Appointment, AppointmentStatus } from '@/types'
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
   PENDING:   'Pending',
@@ -20,14 +21,43 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
   NO_SHOW:   'bg-neutral-100 text-neutral-400 border-neutral-200',
 }
 
+type ActionType = 'confirm' | 'cancel' | 'complete'
+type PendingAction = { type: ActionType; appt: Appointment }
 type Filter = AppointmentStatus | 'ALL'
+
+const ACTION_CONFIG: Record<ActionType, {
+  variant: 'default' | 'danger' | 'warning'
+  title: (appt: Appointment) => string
+  description: (appt: Appointment) => string
+  confirmLabel: string
+}> = {
+  confirm: {
+    variant: 'default',
+    title: (a) => `Confirm booking for ${a.customer.name}?`,
+    description: (a) => `This will confirm the appointment on ${format(new Date(a.startsAt), 'EEEE, d MMM · h:mm a')}. The customer will be notified.`,
+    confirmLabel: 'Yes, confirm',
+  },
+  cancel: {
+    variant: 'danger',
+    title: () => 'Cancel this appointment?',
+    description: (a) => `The booking for ${a.customer.name} on ${format(new Date(a.startsAt), 'd MMM · h:mm a')} will be cancelled.`,
+    confirmLabel: 'Yes, cancel',
+  },
+  complete: {
+    variant: 'default',
+    title: () => 'Mark as completed?',
+    description: (a) => `Confirm that the appointment with ${a.customer.name} has been completed. Loyalty points will be awarded.`,
+    confirmLabel: 'Yes, mark complete',
+  },
+}
 
 export default function StylistAppointmentsPage() {
   const { data: appointments = [], isLoading } = useAppointments()
   const confirm  = useStylistConfirm()
   const complete = useStylistComplete()
   const cancel   = useCancelAppointment()
-  const [filter, setFilter] = useState<Filter>('ALL')
+  const [filter, setFilter]           = useState<Filter>('ALL')
+  const [pendingAction, setPending]   = useState<PendingAction | null>(null)
 
   const tabs: { key: Filter; label: string }[] = [
     { key: 'ALL',       label: 'All' },
@@ -42,6 +72,16 @@ export default function StylistAppointmentsPage() {
     : appointments.filter((a) => a.status === filter)
 
   const sorted = [...visible].sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime())
+
+  const handleConfirm = () => {
+    if (!pendingAction) return
+    const { type, appt } = pendingAction
+    if (type === 'confirm')  confirm.mutate(appt.id,        { onSuccess: () => setPending(null) })
+    if (type === 'cancel')   cancel.mutate({ id: appt.id }, { onSuccess: () => setPending(null) })
+    if (type === 'complete') complete.mutate(appt.id,       { onSuccess: () => setPending(null) })
+  }
+
+  const isMutating = confirm.isPending || complete.isPending || cancel.isPending
 
   return (
     <div className="space-y-5">
@@ -131,18 +171,16 @@ export default function StylistAppointmentsPage() {
                     {appt.status === 'PENDING' && (
                       <>
                         <button
-                          onClick={() => confirm.mutate(appt.id)}
-                          disabled={confirm.isPending}
+                          onClick={() => setPending({ type: 'confirm', appt })}
                           title="Confirm appointment"
-                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors"
                         >
                           <CheckCheck size={13} /> Confirm
                         </button>
                         <button
-                          onClick={() => cancel.mutate({ id: appt.id })}
-                          disabled={cancel.isPending}
+                          onClick={() => setPending({ type: 'cancel', appt })}
                           title="Cancel appointment"
-                          className="p-1.5 bg-red-50 text-red-400 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
+                          className="p-1.5 bg-red-50 text-red-400 hover:bg-red-100 rounded-lg transition-colors"
                         >
                           <XCircle size={14} />
                         </button>
@@ -150,10 +188,9 @@ export default function StylistAppointmentsPage() {
                     )}
                     {appt.status === 'CONFIRMED' && (
                       <button
-                        onClick={() => complete.mutate(appt.id)}
-                        disabled={complete.isPending}
+                        onClick={() => setPending({ type: 'complete', appt })}
                         title="Mark as complete"
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                       >
                         <CheckCheck size={13} /> Mark Complete
                       </button>
@@ -164,6 +201,18 @@ export default function StylistAppointmentsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {pendingAction && (
+        <ConfirmModal
+          variant={ACTION_CONFIG[pendingAction.type].variant}
+          title={ACTION_CONFIG[pendingAction.type].title(pendingAction.appt)}
+          description={ACTION_CONFIG[pendingAction.type].description(pendingAction.appt)}
+          confirmLabel={ACTION_CONFIG[pendingAction.type].confirmLabel}
+          isPending={isMutating}
+          onConfirm={handleConfirm}
+          onClose={() => setPending(null)}
+        />
       )}
     </div>
   )

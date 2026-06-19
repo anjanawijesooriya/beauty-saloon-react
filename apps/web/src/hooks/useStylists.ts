@@ -62,6 +62,8 @@ export const useMyProfile = () =>
   useQuery<StylistProfile>({
     queryKey: ['stylist-me'],
     queryFn: () => api.get('/stylists/me').then((r) => r.data),
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   })
 
 // ── Admin queries (polled every 30 s) ─────────────────────────────────────

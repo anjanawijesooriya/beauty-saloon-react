@@ -48,9 +48,64 @@ export const reviewsService = {
     return prisma.review.findMany({
       include: {
         customer: { select: { name: true, email: true } },
-        appointment: { select: { startsAt: true } },
+        appointment: {
+          select: {
+            startsAt: true,
+            stylist: { include: { user: { select: { name: true } } } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
+    })
+  },
+
+  async myReviews(userId: string) {
+    const profile = await prisma.stylistProfile.findUnique({ where: { userId } })
+    if (!profile) throw new AppError(404, 'Stylist profile not found')
+    return prisma.review.findMany({
+      where: { stylistId: profile.id },
+      include: { customer: { select: { name: true, avatarUrl: true } } },
+      orderBy: { createdAt: 'desc' },
+    })
+  },
+
+  async stylistToggleHide(id: string, userId: string) {
+    const profile = await prisma.stylistProfile.findUnique({ where: { userId } })
+    if (!profile) throw new AppError(404, 'Stylist profile not found')
+    const review = await prisma.review.findUnique({ where: { id } })
+    if (!review) throw new AppError(404, 'Review not found')
+    if (review.stylistId !== profile.id) throw new AppError(403, 'Forbidden')
+
+    const updated = await prisma.review.update({ where: { id }, data: { isHidden: !review.isHidden } })
+
+    const agg = await prisma.review.aggregate({
+      where: { stylistId: profile.id, isHidden: false },
+      _avg: { rating: true }, _count: { rating: true },
+    })
+    await prisma.stylistProfile.update({
+      where: { id: profile.id },
+      data: { rating: agg._avg.rating ?? 0, reviewCount: agg._count.rating },
+    })
+
+    return updated
+  },
+
+  async stylistDelete(id: string, userId: string) {
+    const profile = await prisma.stylistProfile.findUnique({ where: { userId } })
+    if (!profile) throw new AppError(404, 'Stylist profile not found')
+    const review = await prisma.review.findUnique({ where: { id } })
+    if (!review) throw new AppError(404, 'Review not found')
+    if (review.stylistId !== profile.id) throw new AppError(403, 'Forbidden')
+
+    await prisma.review.delete({ where: { id } })
+
+    const agg = await prisma.review.aggregate({
+      where: { stylistId: profile.id, isHidden: false },
+      _avg: { rating: true }, _count: { rating: true },
+    })
+    await prisma.stylistProfile.update({
+      where: { id: profile.id },
+      data: { rating: agg._avg.rating ?? 0, reviewCount: agg._count.rating },
     })
   },
 

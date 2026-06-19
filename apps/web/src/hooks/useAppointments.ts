@@ -22,6 +22,8 @@ export const useAppointments = () =>
   useQuery<Appointment[]>({
     queryKey: ['appointments'],
     queryFn: () => api.get('/appointments').then((r) => r.data),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   })
 
 export const useAppointment = (id: string) =>

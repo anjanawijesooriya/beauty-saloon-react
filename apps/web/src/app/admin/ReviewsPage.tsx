@@ -25,6 +25,7 @@ export default function AdminReviewsPage() {
             <thead>
               <tr className="border-b border-neutral-100">
                 <th className="text-left text-xs font-medium text-neutral-400 px-6 py-3">Customer</th>
+                <th className="text-left text-xs font-medium text-neutral-400 px-4 py-3">Stylist</th>
                 <th className="text-left text-xs font-medium text-neutral-400 px-4 py-3">Rating</th>
                 <th className="text-left text-xs font-medium text-neutral-400 px-4 py-3">Comment</th>
                 <th className="text-left text-xs font-medium text-neutral-400 px-4 py-3">Date</th>
@@ -33,12 +34,15 @@ export default function AdminReviewsPage() {
             </thead>
             <tbody className="divide-y divide-neutral-50">
               {!reviews?.length ? (
-                <tr><td colSpan={5} className="text-center py-12 text-sm text-neutral-400">No reviews yet</td></tr>
+                <tr><td colSpan={6} className="text-center py-12 text-sm text-neutral-400">No reviews yet</td></tr>
               ) : reviews.map((review) => (
                 <tr key={review.id} className={`hover:bg-neutral-50 transition-colors ${review.isHidden ? 'opacity-50' : ''}`}>
                   <td className="px-6 py-3">
                     <p className="text-sm font-medium text-neutral-800">{review.customer.name}</p>
                     <p className="text-xs text-neutral-400">{review.customer.email}</p>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-neutral-700 font-medium">
+                    {review.appointment?.stylist?.user?.name ?? '—'}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-0.5">
