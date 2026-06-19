@@ -79,6 +79,7 @@ export const appointmentsService = {
         items: { include: { service: true } },
         customer: { select: { name: true, email: true } },
         stylist: { include: { user: { select: { name: true } } } },
+        review: { select: { id: true } },
       },
       orderBy: { startsAt: 'desc' },
     })
@@ -190,6 +191,17 @@ export const appointmentsService = {
       data: { stripePaymentIntentId: intent.id },
     })
     return { clientSecret: intent.client_secret, appointmentId }
+  },
+
+  async adminList() {
+    return prisma.appointment.findMany({
+      include: {
+        items: { include: { service: true } },
+        customer: { select: { name: true, email: true } },
+        stylist: { include: { user: { select: { name: true } } } },
+      },
+      orderBy: { startsAt: 'desc' },
+    })
   },
 
   async adminStats() {

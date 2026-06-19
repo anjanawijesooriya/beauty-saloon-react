@@ -30,6 +30,10 @@ export const appointmentsController = {
     try { res.json(await appointmentsService.createPaymentIntent(req.params.id, req.user.sub)) } catch (err) { next(err) }
   },
 
+  async adminList(_req: Request, res: Response, next: NextFunction) {
+    try { res.json(await appointmentsService.adminList()) } catch (err) { next(err) }
+  },
+
   async adminStats(_req: Request, res: Response, next: NextFunction) {
     try { res.json(await appointmentsService.adminStats()) } catch (err) { next(err) }
   },

@@ -20,6 +20,7 @@ const router = Router()
 router.use(authenticate)
 
 router.get('/admin/stats',   authorize('ADMIN'),                                       appointmentsController.adminStats)
+router.get('/admin/all',     authorize('ADMIN'),                                       appointmentsController.adminList)
 router.post('/',              authorize('CUSTOMER'),          validate(CreateSchema),  appointmentsController.create)
 router.get('/',                                                                        appointmentsController.list)
 router.get('/:id',                                                                     appointmentsController.getById)

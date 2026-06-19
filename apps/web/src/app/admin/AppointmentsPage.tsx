@@ -93,7 +93,7 @@ export default function AdminAppointmentsPage() {
                     <p className="font-medium text-neutral-900">{appt.customer.name}</p>
                     <p className="text-neutral-400 text-xs">{appt.customer.email}</p>
                   </td>
-                  <td className="px-4 py-3 text-neutral-700">{appt.stylist.user.name}</td>
+                  <td className="px-4 py-3 text-neutral-700">{appt.stylist?.user?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-neutral-600 whitespace-nowrap">
                     {format(new Date(appt.startsAt), 'd MMM yyyy')}<br />
                     <span className="text-xs text-neutral-400">{format(new Date(appt.startsAt), 'h:mm a')}</span>

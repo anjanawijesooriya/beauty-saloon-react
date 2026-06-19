@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { api } from '@/lib/api'
+import { queryClient } from '@/lib/queryClient'
 
 export interface AuthUser {
   id: string
@@ -47,7 +48,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   logout: () => {
     localStorage.removeItem('glowher-token')
     set({ user: null, token: null })
-    // Tell the API (fire-and-forget)
+    queryClient.clear()
     api.post('/auth/logout').catch(() => {})
   },
 

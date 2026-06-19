@@ -210,7 +210,7 @@ export default function AppointmentsPage() {
                       </div>
                     )}
 
-                    {appt.status === 'COMPLETED' && !(appt as any).review && (
+                    {appt.status === 'COMPLETED' && !appt.review && (
                       <button
                         onClick={() => setReviewAppt(appt)}
                         className="flex items-center gap-1 text-xs text-gold-500 hover:text-gold-600 transition-colors font-medium"

@@ -36,7 +36,7 @@ export const useAppointment = (id: string) =>
 export const useAdminAppointments = () =>
   useQuery<Appointment[]>({
     queryKey: ['admin-appointments'],
-    queryFn: () => api.get('/appointments').then((r) => r.data),
+    queryFn: () => api.get('/appointments/admin/all').then((r) => r.data),
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
   })

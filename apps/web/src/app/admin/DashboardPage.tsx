@@ -124,7 +124,7 @@ export default function AdminDashboard() {
                       <p className="text-sm font-medium text-neutral-800">{appt.customer.name}</p>
                       <p className="text-xs text-neutral-400">{appt.customer.email}</p>
                     </td>
-                    <td className="px-4 py-3 text-sm text-neutral-600">{appt.stylist.user.name}</td>
+                    <td className="px-4 py-3 text-sm text-neutral-600">{appt.stylist?.user?.name ?? '—'}</td>
                     <td className="px-4 py-3">
                       <p className="text-sm text-neutral-700">{format(new Date(appt.startsAt), 'd MMM yyyy')}</p>
                       <p className="text-xs text-neutral-400">{format(new Date(appt.startsAt), 'h:mm a')}</p>

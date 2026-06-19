@@ -129,4 +129,5 @@ export interface Appointment {
   notes?: string
   cancelReason?: string
   items: AppointmentItem[]
+  review?: { id: string } | null
 }
