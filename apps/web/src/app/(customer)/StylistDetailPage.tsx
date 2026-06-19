@@ -89,12 +89,18 @@ export default function StylistDetailPage() {
 
             {/* CTA */}
             <motion.div variants={fadeUp}>
-              <Link
-                to={`/book?stylistId=${stylist.id}`}
-                className="px-6 py-3 gradient-brand text-white rounded-xl font-medium hover:opacity-90 transition-opacity shadow-card whitespace-nowrap"
-              >
-                Book Appointment
-              </Link>
+              {stylist.isAvailable ? (
+                <Link
+                  to={`/book?stylistId=${stylist.id}`}
+                  className="px-6 py-3 gradient-brand text-white rounded-xl font-medium hover:opacity-90 transition-opacity shadow-card whitespace-nowrap"
+                >
+                  Book Appointment
+                </Link>
+              ) : (
+                <div className="px-6 py-3 bg-neutral-200 text-neutral-400 rounded-xl font-medium shadow-card whitespace-nowrap cursor-not-allowed text-sm text-center">
+                  Currently Unavailable
+                </div>
+              )}
             </motion.div>
           </motion.div>
         </div>
@@ -134,25 +140,43 @@ export default function StylistDetailPage() {
                 {(stylist as any).services?.length === 0 ? (
                   <p className="text-neutral-400 text-sm col-span-2 py-8 text-center">No services listed yet.</p>
                 ) : (
-                  (stylist as any).services?.map((ss: any) => (
-                    <Link
-                      key={ss.id}
-                      to={`/book?stylistId=${stylist.id}&serviceId=${ss.service.id}`}
-                      className="group bg-white rounded-xl shadow-card hover:shadow-card-hover transition-all p-4 flex items-start gap-4"
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0 font-display italic text-brand-300 text-xl">
-                        {ss.service.name[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-neutral-900 group-hover:text-brand-500 transition-colors text-sm">{ss.service.name}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-neutral-400 flex items-center gap-1"><Clock size={10} /> {ss.service.durationMins} min</span>
-                          <span className="text-xs font-semibold text-brand-500">LKR {Number(ss.priceLKR).toLocaleString()}</span>
+                  (stylist as any).services?.map((ss: any) =>
+                    stylist.isAvailable ? (
+                      <Link
+                        key={ss.id}
+                        to={`/book?stylistId=${stylist.id}&serviceId=${ss.service.id}`}
+                        className="group bg-white rounded-xl shadow-card hover:shadow-card-hover transition-all p-4 flex items-start gap-4"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0 font-display italic text-brand-300 text-xl">
+                          {ss.service.name[0]}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-neutral-900 group-hover:text-brand-500 transition-colors text-sm">{ss.service.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-neutral-400 flex items-center gap-1"><Clock size={10} /> {ss.service.durationMins} min</span>
+                            <span className="text-xs font-semibold text-brand-500">LKR {Number(ss.priceLKR).toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <ChevronRight size={16} className="text-neutral-300 group-hover:text-brand-400 transition-colors flex-shrink-0 mt-1" />
+                      </Link>
+                    ) : (
+                      <div
+                        key={ss.id}
+                        className="bg-white rounded-xl shadow-card p-4 flex items-start gap-4 opacity-50 cursor-not-allowed"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center flex-shrink-0 font-display italic text-neutral-300 text-xl">
+                          {ss.service.name[0]}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-neutral-500 text-sm">{ss.service.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-neutral-400 flex items-center gap-1"><Clock size={10} /> {ss.service.durationMins} min</span>
+                            <span className="text-xs font-semibold text-neutral-400">LKR {Number(ss.priceLKR).toLocaleString()}</span>
+                          </div>
                         </div>
                       </div>
-                      <ChevronRight size={16} className="text-neutral-300 group-hover:text-brand-400 transition-colors flex-shrink-0 mt-1" />
-                    </Link>
-                  ))
+                    )
+                  )
                 )}
               </div>
             )}
@@ -199,9 +223,18 @@ export default function StylistDetailPage() {
                     })}
                   </div>
                 )}
-                <Link to={`/book?stylistId=${stylist.id}`} className="mt-6 w-full flex items-center justify-center py-3 gradient-brand text-white rounded-xl font-medium hover:opacity-90 transition-opacity text-sm">
-                  Book an Appointment
-                </Link>
+                {stylist.isAvailable ? (
+                  <Link
+                    to={`/book?stylistId=${stylist.id}`}
+                    className="mt-6 w-full flex items-center justify-center py-3 gradient-brand text-white rounded-xl font-medium hover:opacity-90 transition-opacity text-sm"
+                  >
+                    Book an Appointment
+                  </Link>
+                ) : (
+                  <div className="mt-6 w-full flex items-center justify-center py-3 bg-neutral-200 text-neutral-400 rounded-xl font-medium text-sm cursor-not-allowed">
+                    Currently Unavailable
+                  </div>
+                )}
               </div>
             )}
 
