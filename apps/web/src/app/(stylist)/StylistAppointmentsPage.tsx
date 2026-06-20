@@ -1,7 +1,13 @@
 import { useState } from 'react'
-import { format } from 'date-fns'
-import { CalendarCheck, Clock, CheckCheck, XCircle } from 'lucide-react'
-import { useAppointments, useStylistConfirm, useStylistComplete, useCancelAppointment } from '@/hooks/useAppointments'
+import { format, isPast } from 'date-fns'
+import { CalendarCheck, Clock, CheckCheck, XCircle, UserX, AlertCircle } from 'lucide-react'
+import {
+  useAppointments,
+  useStylistConfirm,
+  useStylistComplete,
+  useCancelAppointment,
+  useNoShow,
+} from '@/hooks/useAppointments'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { Appointment, AppointmentStatus } from '@/types'
 
@@ -21,7 +27,7 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
   NO_SHOW:   'bg-neutral-100 text-neutral-400 border-neutral-200',
 }
 
-type ActionType = 'confirm' | 'cancel' | 'complete'
+type ActionType = 'confirm' | 'cancel' | 'complete' | 'noshow' | 'expire'
 type PendingAction = { type: ActionType; appt: Appointment }
 type Filter = AppointmentStatus | 'ALL'
 
@@ -49,6 +55,18 @@ const ACTION_CONFIG: Record<ActionType, {
     description: (a) => `Confirm that the appointment with ${a.customer.name} has been completed. Loyalty points will be awarded.`,
     confirmLabel: 'Yes, mark complete',
   },
+  noshow: {
+    variant: 'warning',
+    title: () => 'Mark as no-show?',
+    description: (a) => `${a.customer.name} did not attend this appointment. No loyalty points will be awarded. This cannot be undone.`,
+    confirmLabel: 'Yes, mark no-show',
+  },
+  expire: {
+    variant: 'warning',
+    title: () => 'Cancel overdue booking?',
+    description: (a) => `This booking from ${a.customer.name} was never confirmed and the appointment time has passed. Cancel it to clean up your schedule.`,
+    confirmLabel: 'Yes, cancel it',
+  },
 }
 
 export default function StylistAppointmentsPage() {
@@ -56,8 +74,9 @@ export default function StylistAppointmentsPage() {
   const confirm  = useStylistConfirm()
   const complete = useStylistComplete()
   const cancel   = useCancelAppointment()
-  const [filter, setFilter]           = useState<Filter>('ALL')
-  const [pendingAction, setPending]   = useState<PendingAction | null>(null)
+  const noShow   = useNoShow()
+  const [filter, setFilter]         = useState<Filter>('ALL')
+  const [pendingAction, setPending] = useState<PendingAction | null>(null)
 
   const tabs: { key: Filter; label: string }[] = [
     { key: 'ALL',       label: 'All' },
@@ -65,6 +84,7 @@ export default function StylistAppointmentsPage() {
     { key: 'CONFIRMED', label: 'Confirmed' },
     { key: 'COMPLETED', label: 'Completed' },
     { key: 'CANCELLED', label: 'Cancelled' },
+    { key: 'NO_SHOW',   label: 'No Show' },
   ]
 
   const visible = filter === 'ALL'
@@ -76,12 +96,15 @@ export default function StylistAppointmentsPage() {
   const handleConfirm = () => {
     if (!pendingAction) return
     const { type, appt } = pendingAction
-    if (type === 'confirm')  confirm.mutate(appt.id,        { onSuccess: () => setPending(null) })
-    if (type === 'cancel')   cancel.mutate({ id: appt.id }, { onSuccess: () => setPending(null) })
-    if (type === 'complete') complete.mutate(appt.id,       { onSuccess: () => setPending(null) })
+    const done = () => setPending(null)
+    if (type === 'confirm')  confirm.mutate(appt.id,                          { onSuccess: done })
+    if (type === 'cancel')   cancel.mutate({ id: appt.id },                   { onSuccess: done })
+    if (type === 'complete') complete.mutate(appt.id,                         { onSuccess: done })
+    if (type === 'noshow')   noShow.mutate(appt.id,                           { onSuccess: done })
+    if (type === 'expire')   cancel.mutate({ id: appt.id, reason: 'expired' }, { onSuccess: done })
   }
 
-  const isMutating = confirm.isPending || complete.isPending || cancel.isPending
+  const isMutating = confirm.isPending || complete.isPending || cancel.isPending || noShow.isPending
 
   return (
     <div className="space-y-5">
@@ -125,81 +148,108 @@ export default function StylistAppointmentsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {sorted.map((appt) => (
-            <div key={appt.id} className="bg-white rounded-2xl shadow-card p-5">
-              <div className="flex items-start justify-between gap-4">
-                {/* Left: customer + details */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                      {appt.customer.name[0]}
+          {sorted.map((appt) => {
+            const isOverduePending = appt.status === 'PENDING' && isPast(new Date(appt.startsAt))
+            return (
+              <div key={appt.id} className={`bg-white rounded-2xl shadow-card p-5 ${isOverduePending ? 'border border-amber-200' : ''}`}>
+                <div className="flex items-start justify-between gap-4">
+                  {/* Left: customer + details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        {appt.customer.name[0]}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-neutral-900 text-sm">{appt.customer.name}</p>
+                          {isOverduePending && (
+                            <span className="flex items-center gap-1 text-xs bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded-full">
+                              <AlertCircle size={10} /> Overdue
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-neutral-400">{appt.customer.email}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-neutral-900 text-sm">{appt.customer.name}</p>
-                      <p className="text-xs text-neutral-400">{appt.customer.email}</p>
+                    <div className="ml-10 space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+                        <Clock size={11} />
+                        {format(new Date(appt.startsAt), 'EEEE, d MMM yyyy · h:mm a')}
+                        <span className="text-neutral-300">→</span>
+                        {format(new Date(appt.endsAt), 'h:mm a')}
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {appt.items.map((item) => (
+                          <span key={item.id} className="text-xs bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full">
+                            {item.service.name}
+                          </span>
+                        ))}
+                      </div>
+                      {appt.notes && (
+                        <p className="text-xs text-neutral-400 italic mt-1">Note: {appt.notes}</p>
+                      )}
                     </div>
                   </div>
-                  <div className="ml-10 space-y-1">
-                    <div className="flex items-center gap-1.5 text-xs text-neutral-500">
-                      <Clock size={11} />
-                      {format(new Date(appt.startsAt), 'EEEE, d MMM yyyy · h:mm a')}
-                      <span className="text-neutral-300">→</span>
-                      {format(new Date(appt.endsAt), 'h:mm a')}
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {appt.items.map((item) => (
-                        <span key={item.id} className="text-xs bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full">
-                          {item.service.name}
-                        </span>
-                      ))}
-                    </div>
-                    {appt.notes && (
-                      <p className="text-xs text-neutral-400 italic mt-1">Note: {appt.notes}</p>
-                    )}
-                  </div>
-                </div>
 
-                {/* Right: status + amount + actions */}
-                <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${STATUS_STYLES[appt.status]}`}>
-                    {STATUS_LABELS[appt.status]}
-                  </span>
-                  <span className="font-bold text-neutral-900 text-sm">
-                    LKR {Number(appt.totalLKR).toLocaleString()}
-                  </span>
-                  <div className="flex gap-1.5">
-                    {appt.status === 'PENDING' && (
-                      <>
+                  {/* Right: status + amount + actions */}
+                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${STATUS_STYLES[appt.status]}`}>
+                      {STATUS_LABELS[appt.status]}
+                    </span>
+                    <span className="font-bold text-neutral-900 text-sm">
+                      LKR {Number(appt.totalLKR).toLocaleString()}
+                    </span>
+                    <div className="flex gap-1.5">
+                      {/* Overdue PENDING: only offer cancel/expire, not confirm */}
+                      {appt.status === 'PENDING' && isOverduePending && (
                         <button
-                          onClick={() => setPending({ type: 'confirm', appt })}
-                          title="Confirm appointment"
-                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors"
+                          onClick={() => setPending({ type: 'expire', appt })}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors"
                         >
-                          <CheckCheck size={13} /> Confirm
+                          <XCircle size={13} /> Cancel Overdue
                         </button>
-                        <button
-                          onClick={() => setPending({ type: 'cancel', appt })}
-                          title="Cancel appointment"
-                          className="p-1.5 bg-red-50 text-red-400 hover:bg-red-100 rounded-lg transition-colors"
-                        >
-                          <XCircle size={14} />
-                        </button>
-                      </>
-                    )}
-                    {appt.status === 'CONFIRMED' && (
-                      <button
-                        onClick={() => setPending({ type: 'complete', appt })}
-                        title="Mark as complete"
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                      >
-                        <CheckCheck size={13} /> Mark Complete
-                      </button>
-                    )}
+                      )}
+                      {/* Active PENDING: confirm or cancel */}
+                      {appt.status === 'PENDING' && !isOverduePending && (
+                        <>
+                          <button
+                            onClick={() => setPending({ type: 'confirm', appt })}
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors"
+                          >
+                            <CheckCheck size={13} /> Confirm
+                          </button>
+                          <button
+                            onClick={() => setPending({ type: 'cancel', appt })}
+                            className="p-1.5 bg-red-50 text-red-400 hover:bg-red-100 rounded-lg transition-colors"
+                          >
+                            <XCircle size={14} />
+                          </button>
+                        </>
+                      )}
+                      {/* CONFIRMED: complete or no-show */}
+                      {appt.status === 'CONFIRMED' && (
+                        <>
+                          <button
+                            onClick={() => setPending({ type: 'complete', appt })}
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                          >
+                            <CheckCheck size={13} /> Mark Complete
+                          </button>
+                          <button
+                            onClick={() => setPending({ type: 'noshow', appt })}
+                            title="Mark as no-show"
+                            className="p-1.5 bg-neutral-100 text-neutral-400 hover:bg-amber-50 hover:text-amber-500 rounded-lg transition-colors"
+                          >
+                            <UserX size={14} />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

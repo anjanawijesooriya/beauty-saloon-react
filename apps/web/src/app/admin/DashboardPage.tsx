@@ -10,6 +10,7 @@ interface AdminStats {
   confirmed: number
   cancelled: number
   completed: number
+  noShow: number
   revenueLKR: number
   userCount: number
   activeStylistCount: number
@@ -149,6 +150,7 @@ export default function AdminDashboard() {
             <StatusBar label="Confirmed" count={s.confirmed} total={s.total} color="bg-blue-400" />
             <StatusBar label="Pending"   count={s.pending}   total={s.total} color="bg-amber-400" />
             <StatusBar label="Cancelled" count={s.cancelled} total={s.total} color="bg-red-400" />
+            <StatusBar label="No Show"   count={s.noShow}    total={s.total} color="bg-neutral-400" />
           </div>
 
           <div className="mt-6 pt-5 border-t border-neutral-100 grid grid-cols-2 gap-3">
@@ -157,6 +159,7 @@ export default function AdminDashboard() {
               { label: 'Confirmed', val: s.confirmed, color: 'text-blue-500' },
               { label: 'Pending',   val: s.pending,   color: 'text-amber-500' },
               { label: 'Cancelled', val: s.cancelled, color: 'text-red-500' },
+              { label: 'No Show',   val: s.noShow,    color: 'text-neutral-500' },
             ].map(({ label, val, color }) => (
               <div key={label} className="text-center p-3 bg-neutral-50 rounded-xl">
                 <p className={`text-xl font-bold ${color}`}>{val}</p>

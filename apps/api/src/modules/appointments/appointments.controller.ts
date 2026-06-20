@@ -26,6 +26,10 @@ export const appointmentsController = {
     try { res.json(await appointmentsService.complete(req.params.id)) } catch (err) { next(err) }
   },
 
+  async noShow(req: Request, res: Response, next: NextFunction) {
+    try { res.json(await appointmentsService.noShow(req.params.id)) } catch (err) { next(err) }
+  },
+
   async pay(req: Request, res: Response, next: NextFunction) {
     try { res.json(await appointmentsService.createPaymentIntent(req.params.id, req.user.sub)) } catch (err) { next(err) }
   },

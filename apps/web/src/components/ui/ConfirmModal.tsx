@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { X, AlertTriangle, Trash2, Info } from 'lucide-react'
 
 type Variant = 'danger' | 'warning' | 'default'
@@ -41,7 +42,7 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   const { icon, confirmClass, iconBg } = config[variant]
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
@@ -76,6 +77,7 @@ export function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

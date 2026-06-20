@@ -103,3 +103,13 @@ export const useStylistComplete = () =>
     },
     onError: (err: any) => toast.error(apiError(err, 'Failed to mark appointment as completed')),
   })
+
+export const useNoShow = () =>
+  useMutation({
+    mutationFn: (id: string) => api.patch(`/appointments/${id}/no-show`).then((r) => r.data),
+    onSuccess: () => {
+      invalidateAll()
+      toast.success('Marked as no-show')
+    },
+    onError: (err: any) => toast.error(apiError(err, 'Failed to mark as no-show')),
+  })

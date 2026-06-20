@@ -136,6 +136,13 @@ export const appointmentsService = {
     return updated
   },
 
+  async noShow(id: string) {
+    const appt = await prisma.appointment.findUnique({ where: { id } })
+    if (!appt) throw new AppError(404, 'Appointment not found')
+    if (appt.status !== 'CONFIRMED') throw new AppError(400, 'Only confirmed appointments can be marked as no-show')
+    return prisma.appointment.update({ where: { id }, data: { status: 'NO_SHOW' } })
+  },
+
   async complete(id: string) {
     const appt = await prisma.appointment.findUnique({
       where: { id },
@@ -230,6 +237,7 @@ export const appointmentsService = {
       confirmed:          byStatus['CONFIRMED'] ?? 0,
       cancelled:          byStatus['CANCELLED'] ?? 0,
       completed:          byStatus['COMPLETED'] ?? 0,
+      noShow:             byStatus['NO_SHOW']   ?? 0,
       revenueLKR:         Number(revenueAgg._sum.totalLKR ?? 0),
       userCount,
       activeStylistCount,

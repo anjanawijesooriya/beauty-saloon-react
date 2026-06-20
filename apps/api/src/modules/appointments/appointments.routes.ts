@@ -28,5 +28,6 @@ router.post('/:id/pay',      authorize('CUSTOMER'),                             
 router.patch('/:id/cancel',                                   validate(CancelSchema),  appointmentsController.cancel)
 router.patch('/:id/confirm', authorize('STYLIST', 'ADMIN'),                           appointmentsController.confirm)
 router.patch('/:id/complete', authorize('STYLIST', 'ADMIN'),                          appointmentsController.complete)
+router.patch('/:id/no-show', authorize('STYLIST', 'ADMIN'),                           appointmentsController.noShow)
 
 export default router
