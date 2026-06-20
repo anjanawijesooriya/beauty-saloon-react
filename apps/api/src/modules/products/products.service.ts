@@ -36,13 +36,13 @@ export const productsService = {
       prisma.product.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
       prisma.product.count({ where }),
     ])
-    return { products, total, page, limit, totalPages: Math.ceil(total / limit) }
+    return { products: products.map((p) => ({ ...p, imageUrls: p.imageUrls ?? [] })), total, page, limit, totalPages: Math.ceil(total / limit) }
   },
 
   async getBySlug(slug: string) {
     const product = await prisma.product.findUnique({ where: { slug } })
     if (!product) throw new AppError(404, 'Product not found')
-    return product
+    return { ...product, imageUrls: product.imageUrls ?? [] }
   },
 
   async getById(id: string) {
@@ -72,12 +72,19 @@ export const productsService = {
       prisma.product.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
       prisma.product.count({ where }),
     ])
-    return { products, total, page, limit, totalPages: Math.ceil(total / limit) }
+    return { products: products.map((p) => ({ ...p, imageUrls: p.imageUrls ?? [] })), total, page, limit, totalPages: Math.ceil(total / limit) }
   },
 
   async update(id: string, dto: Partial<CreateProductDto>) {
     await this.getById(id)
-    return prisma.product.update({ where: { id }, data: dto })
+    const { imageUrls, ...rest } = dto
+    return prisma.product.update({
+      where: { id },
+      data: {
+        ...rest,
+        ...(imageUrls !== undefined ? { imageUrls: { set: imageUrls } } : {}),
+      },
+    })
   },
 
   async toggleActive(id: string) {

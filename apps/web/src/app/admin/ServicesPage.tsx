@@ -200,8 +200,11 @@ export default function AdminServicesPage() {
                   <tr key={service.id} className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0 text-brand-300 font-display italic text-lg">
-                          {service.name[0]}
+                        <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-brand-50">
+                          {service.imageUrl
+                            ? <img src={service.imageUrl} alt={service.name} className="w-full h-full object-cover" />
+                            : <div className="w-full h-full flex items-center justify-center text-brand-300 font-display italic text-lg">{service.name[0]}</div>
+                          }
                         </div>
                         <div>
                           <p className="font-medium text-neutral-900">{service.name}</p>

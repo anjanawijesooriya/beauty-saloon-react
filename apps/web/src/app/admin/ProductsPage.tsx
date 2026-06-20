@@ -50,7 +50,12 @@ function ProductModal({ product, onClose }: { product?: Product; onClose: () => 
   const removeImageUrl = (url: string) => setImageUrls((prev) => prev.filter((u) => u !== url))
 
   const onSubmit = async (values: FormValues) => {
-    const payload = { ...values, imageUrls: imageUrls.length ? imageUrls : undefined }
+    // Auto-add any URL still in the input field that the user forgot to press +
+    const finalUrls = [...imageUrls]
+    const pending = imgInput.trim()
+    if (pending && !finalUrls.includes(pending)) finalUrls.push(pending)
+
+    const payload = { ...values, imageUrls: finalUrls }
     if (product) await update({ id: product.id, ...payload })
     else await create(payload)
     onClose()

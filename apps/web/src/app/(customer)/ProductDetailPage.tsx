@@ -56,7 +56,7 @@ export default function ProductDetailPage() {
     )
   }
 
-  const images = product.imageUrls.length > 0 ? product.imageUrls : []
+  const images = product.imageUrls?.length > 0 ? product.imageUrls : []
   const inStock = product.stock > 0
   const maxQty = Math.min(product.stock, 10)
 

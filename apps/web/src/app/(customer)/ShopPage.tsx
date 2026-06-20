@@ -16,7 +16,7 @@ function ProductCard({ product }: { product: Product }) {
     <motion.div variants={fadeUp} className="bg-white rounded-2xl shadow-card overflow-hidden group hover:shadow-card-hover transition-shadow">
       <Link to={`/shop/${product.slug}`}>
         <div className="aspect-square bg-neutral-100 overflow-hidden">
-          {product.imageUrls[0] ? (
+          {product.imageUrls?.[0] ? (
             <img src={product.imageUrls[0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-neutral-300">
