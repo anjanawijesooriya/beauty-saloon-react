@@ -26,8 +26,6 @@ export default function ServicesPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [debouncedSearch, setDebouncedSearch] = useState(search)
-  const [showFilters, setShowFilters] = useState(false)
-
   const categoryId = searchParams.get('category') || undefined
   const page = Number(searchParams.get('page') || '1')
 
@@ -120,13 +118,12 @@ export default function ServicesPage() {
               {cat.name}
             </button>
           ))}
-          <button
-            onClick={() => setShowFilters((v) => !v)}
+          {/* <button
             className="ml-auto flex items-center gap-2 px-4 py-2 bg-white border border-neutral-200 rounded-pill text-sm font-medium text-neutral-600 hover:border-brand-300 hover:text-brand-500 transition-all"
           >
             <SlidersHorizontal size={15} />
             Filters
-          </button>
+          </button> */}
         </div>
 
         {/* Active filter badge */}
