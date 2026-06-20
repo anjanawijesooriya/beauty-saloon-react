@@ -1,25 +1,28 @@
-import sgMail from '@sendgrid/mail'
+import nodemailer from 'nodemailer'
 import { env } from '../config/env'
 
-if (env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(env.SENDGRID_API_KEY)
+function createTransporter() {
+  if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) return null
+  return nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_PORT === 465,
+    auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+  })
 }
 
+const transporter = createTransporter()
+
 async function sendEmail(to: string, subject: string, html: string) {
-  if (!env.SENDGRID_API_KEY) {
+  if (!transporter) {
     console.log(`[mailer-dev] To: ${to} | Subject: ${subject}`)
     return
   }
-  if (!env.SENDGRID_FROM) {
-    console.error('[mailer] SENDGRID_FROM is not set — email not sent')
-    return
-  }
   try {
-    await sgMail.send({ to, from: env.SENDGRID_FROM, subject, html })
+    await transporter.sendMail({ from: env.SMTP_FROM, to, subject, html })
     console.log(`[mailer] Sent "${subject}" → ${to}`)
   } catch (err: any) {
-    const body = err?.response?.body ?? err?.message ?? err
-    console.error(`[mailer] SendGrid error sending "${subject}" to ${to}:`, JSON.stringify(body))
+    console.error(`[mailer] Error sending "${subject}" to ${to}:`, err?.message ?? err)
   }
 }
 
@@ -62,6 +65,6 @@ export async function sendCancellationEmail(to: string, name: string) {
   await sendEmail(
     to,
     'Your GlowHer appointment has been cancelled',
-    `<h2>Hi ${name},</h2><p>Your appointment has been cancelled as requested.</p>`
+    `<h2>Hi ${name},</h2><p>Your appointment has been cancelled.</p>`
   )
 }
