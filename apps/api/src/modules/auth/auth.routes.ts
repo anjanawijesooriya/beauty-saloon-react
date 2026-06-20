@@ -18,9 +18,17 @@ const LoginSchema = z.object({
 
 const router = Router()
 
-router.post('/register', validate(RegisterSchema), authController.register)
-router.post('/login', validate(LoginSchema), authController.login)
-router.get('/me', authenticate, authController.me)
+const ForgotPasswordSchema = z.object({ email: z.string().email() })
+const ResetPasswordSchema  = z.object({
+  token:    z.string().min(1),
+  password: z.string().min(8).max(100),
+})
+
+router.post('/register',        validate(RegisterSchema),       authController.register)
+router.post('/login',           validate(LoginSchema),          authController.login)
+router.post('/forgot-password', validate(ForgotPasswordSchema), authController.forgotPassword)
+router.post('/reset-password',  validate(ResetPasswordSchema),  authController.resetPassword)
+router.get('/me',      authenticate, authController.me)
 router.post('/logout', authenticate, authController.logout)
 
 export default router

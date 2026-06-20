@@ -36,6 +36,13 @@ export const usersController = {
     } catch (err) { next(err) }
   },
 
+  async changePassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      await usersService.changePassword(req.user.sub, req.body.currentPassword, req.body.newPassword)
+      res.json({ message: 'Password updated successfully.' })
+    } catch (err) { next(err) }
+  },
+
   async uploadAvatar(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.file) return res.status(400).json({ message: 'No file uploaded' })

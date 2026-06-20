@@ -1,9 +1,10 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 import { prisma } from '../../config/database'
 import { env } from '../../config/env'
 import { AppError } from '../../middleware/error.middleware'
-import { sendWelcomeEmail } from '../../lib/mailer'
+import { sendWelcomeEmail, sendPasswordResetEmail } from '../../lib/mailer'
 
 interface RegisterDto {
   name: string
@@ -94,6 +95,38 @@ export const authService = {
         phone: user.phone,
       },
     }
+  },
+
+  async forgotPassword(email: string) {
+    const user = await prisma.user.findUnique({ where: { email } })
+    // Always return success to avoid leaking which emails exist
+    if (!user || !user.isActive) return
+
+    const token = crypto.randomBytes(32).toString('hex')
+    const expiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { resetToken: token, resetTokenExpiry: expiry },
+    })
+
+    const resetUrl = `${env.CLIENT_URL}/reset-password?token=${token}`
+    sendPasswordResetEmail(user.email, user.name, resetUrl).catch((e) =>
+      console.warn('[mailer] password reset email failed:', e.message)
+    )
+  },
+
+  async resetPassword(token: string, newPassword: string) {
+    const user = await prisma.user.findUnique({ where: { resetToken: token } })
+    if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+      throw new AppError(400, 'Reset link is invalid or has expired')
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, resetToken: null, resetTokenExpiry: null },
+    })
   },
 
   async me(userId: string) {

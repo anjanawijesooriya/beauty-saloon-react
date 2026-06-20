@@ -29,6 +29,21 @@ export const authController = {
     }
   },
 
+  async forgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      await authService.forgotPassword(req.body.email)
+      // Always respond 200 to avoid email enumeration
+      res.json({ message: 'If that email exists, a reset link has been sent.' })
+    } catch (err) { next(err) }
+  },
+
+  async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      await authService.resetPassword(req.body.token, req.body.password)
+      res.json({ message: 'Password updated successfully.' })
+    } catch (err) { next(err) }
+  },
+
   logout(_req: Request, res: Response) {
     // JWT is stateless — client drops the token.
     // Endpoint exists for future token blocklist / cookie clearing.

@@ -2,12 +2,12 @@ import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Copy, Check, Star, TrendingUp, ArrowUpRight, ArrowDownRight, Gift, Camera, Trash2 } from 'lucide-react'
+import { Copy, Check, Star, TrendingUp, ArrowUpRight, ArrowDownRight, Gift, Camera, Trash2, Lock, Eye, EyeOff } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/auth'
 import { useLoyaltyBalance } from '@/hooks/useLoyalty'
-import { useUpdateProfile, useUploadAvatar, useRemoveAvatar } from '@/hooks/useProfile'
+import { useUpdateProfile, useUploadAvatar, useRemoveAvatar, useChangePassword } from '@/hooks/useProfile'
 import { Spinner } from '@/components/ui/Spinner'
 import { useMinPending } from '@/hooks/useMinPending'
 
@@ -16,6 +16,16 @@ const profileSchema = z.object({
   phone: z.string().min(9, 'Enter a valid phone number').optional().or(z.literal('')),
 })
 type ProfileValues = z.infer<typeof profileSchema>
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword:     z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string().min(1, 'Please confirm your new password'),
+}).refine((v) => v.newPassword === v.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
+})
+type PasswordValues = z.infer<typeof passwordSchema>
 
 function ReferralCard({ referralCode }: { referralCode: string }) {
   const [copied, setCopied] = useState(false)
@@ -54,10 +64,14 @@ export default function ProfilePage() {
   const { user } = useAuthStore()
   const { data: loyalty } = useLoyaltyBalance()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showCurrent, setShowCurrent] = useState(false)
+  const [showNew, setShowNew]         = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const { mutateAsync: updateProfile, isPending: saving } = useUpdateProfile()
   const { mutate: uploadAvatar, isPending: uploading } = useUploadAvatar()
   const { mutate: removeAvatar, isPending: removing } = useRemoveAvatar()
+  const { mutateAsync: changePassword, isPending: changingPw } = useChangePassword()
 
   const pendingSave   = useMinPending(saving)
   const pendingUpload = useMinPending(uploading)
@@ -68,8 +82,20 @@ export default function ProfilePage() {
     values: user ? { name: user.name, phone: user.phone ?? '' } : undefined,
   })
 
+  const {
+    register: registerPw,
+    handleSubmit: handlePwSubmit,
+    reset: resetPw,
+    formState: { errors: pwErrors },
+  } = useForm<PasswordValues>({ resolver: zodResolver(passwordSchema) })
+
   const onSubmit = async (values: ProfileValues) => {
     await updateProfile({ name: values.name, phone: values.phone || undefined })
+  }
+
+  const onPasswordSubmit = async (values: PasswordValues) => {
+    await changePassword({ currentPassword: values.currentPassword, newPassword: values.newPassword })
+    resetPw()
   }
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,6 +176,74 @@ export default function ProfilePage() {
               className="w-full py-3 gradient-brand text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {pendingSave ? <><Spinner />Saving…</> : 'Save Profile'}
+            </button>
+          </form>
+        </div>
+
+        {/* Change Password */}
+        <div className="bg-white rounded-2xl shadow-card p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <Lock size={16} className="text-brand-400" />
+            <h3 className="font-semibold text-neutral-900">Change Password</h3>
+          </div>
+          <form onSubmit={handlePwSubmit(onPasswordSubmit)} className="space-y-4">
+            {/* Current password */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1.5">Current Password</label>
+              <div className="relative">
+                <input
+                  {...registerPw('currentPassword')}
+                  type={showCurrent ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2.5 pr-11 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                />
+                <button type="button" onClick={() => setShowCurrent((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600">
+                  {showCurrent ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+              {pwErrors.currentPassword && <p className="text-xs text-red-500 mt-1">{pwErrors.currentPassword.message}</p>}
+            </div>
+
+            {/* New password */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1.5">New Password</label>
+              <div className="relative">
+                <input
+                  {...registerPw('newPassword')}
+                  type={showNew ? 'text' : 'password'}
+                  placeholder="Min 8 characters"
+                  className="w-full px-4 py-2.5 pr-11 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                />
+                <button type="button" onClick={() => setShowNew((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600">
+                  {showNew ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+              {pwErrors.newPassword && <p className="text-xs text-red-500 mt-1">{pwErrors.newPassword.message}</p>}
+            </div>
+
+            {/* Confirm password */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1.5">Confirm New Password</label>
+              <div className="relative">
+                <input
+                  {...registerPw('confirmPassword')}
+                  type={showConfirm ? 'text' : 'password'}
+                  placeholder="Re-enter new password"
+                  className="w-full px-4 py-2.5 pr-11 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                />
+                <button type="button" onClick={() => setShowConfirm((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600">
+                  {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+              {pwErrors.confirmPassword && <p className="text-xs text-red-500 mt-1">{pwErrors.confirmPassword.message}</p>}
+            </div>
+
+            <button
+              type="submit"
+              disabled={changingPw}
+              className="w-full py-3 gradient-brand text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {changingPw ? <><Spinner />Updating…</> : 'Update Password'}
             </button>
           </form>
         </div>

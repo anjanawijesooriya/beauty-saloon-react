@@ -10,6 +10,8 @@ import { useAuthStore } from './store/auth'
 const HomePage             = lazy(() => import('./app/home/HomePage'))
 const LoginPage            = lazy(() => import('./app/(auth)/LoginPage'))
 const RegisterPage         = lazy(() => import('./app/(auth)/RegisterPage'))
+const ForgotPasswordPage   = lazy(() => import('./app/(auth)/ForgotPasswordPage'))
+const ResetPasswordPage    = lazy(() => import('./app/(auth)/ResetPasswordPage'))
 const ServicesPage         = lazy(() => import('./app/(customer)/ServicesPage'))
 const ServiceDetailPage    = lazy(() => import('./app/(customer)/ServiceDetailPage'))
 const StylistsPage         = lazy(() => import('./app/(customer)/StylistsPage'))
@@ -68,8 +70,10 @@ export default function App() {
     <Suspense fallback={<Spinner />}>
       <Routes>
           {/* Auth pages — no layout */}
-          <Route path="/login"    element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login"             element={<LoginPage />} />
+          <Route path="/register"          element={<RegisterPage />} />
+          <Route path="/forgot-password"   element={<ForgotPasswordPage />} />
+          <Route path="/reset-password"    element={<ResetPasswordPage />} />
 
           {/* Customer-facing */}
           <Route element={<CustomerLayout />}>

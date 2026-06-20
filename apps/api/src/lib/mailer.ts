@@ -68,3 +68,14 @@ export async function sendCancellationEmail(to: string, name: string) {
     `<h2>Hi ${name},</h2><p>Your appointment has been cancelled.</p>`
   )
 }
+
+export async function sendPasswordResetEmail(to: string, name: string, resetUrl: string) {
+  await sendEmail(
+    to,
+    'Reset your GlowHer password',
+    `<h2>Hi ${name},</h2>
+     <p>We received a request to reset your GlowHer password.</p>
+     <p><a href="${resetUrl}" style="background:#d4547a;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">Reset Password</a></p>
+     <p>This link expires in <strong>1 hour</strong>. If you didn't request this, you can safely ignore this email.</p>`
+  )
+}

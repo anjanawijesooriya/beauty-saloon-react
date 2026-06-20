@@ -9,6 +9,7 @@ router.use(authenticate)
 
 router.get('/', authorize('ADMIN'), usersController.list)
 router.put('/me', usersController.updateMe)
+router.put('/me/password', usersController.changePassword)
 router.post('/me/avatar', upload.single('avatar'), usersController.uploadAvatar)
 router.delete('/me/avatar', usersController.removeAvatar)
 router.get('/:id', authorize('ADMIN'), usersController.getById)

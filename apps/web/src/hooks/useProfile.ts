@@ -45,3 +45,23 @@ export const useRemoveAvatar = () =>
     },
     onError: (err: any) => toast.error(apiError(err, 'Failed to remove photo')),
   })
+
+export const useChangePassword = () =>
+  useMutation({
+    mutationFn: (dto: { currentPassword: string; newPassword: string }) =>
+      api.put('/users/me/password', dto).then((r) => r.data),
+    onSuccess: () => toast.success('Password updated successfully'),
+    onError: (err: any) => toast.error(apiError(err, 'Failed to update password')),
+  })
+
+export const useForgotPassword = () =>
+  useMutation({
+    mutationFn: (email: string) =>
+      api.post('/auth/forgot-password', { email }).then((r) => r.data),
+  })
+
+export const useResetPassword = () =>
+  useMutation({
+    mutationFn: (dto: { token: string; password: string }) =>
+      api.post('/auth/reset-password', dto).then((r) => r.data),
+  })
