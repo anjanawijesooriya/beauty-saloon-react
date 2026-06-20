@@ -7,16 +7,16 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <section className="gradient-hero min-h-[90vh] flex items-center">
+      <section className="gradient-hero min-h-[80vh] sm:min-h-[90vh] flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 grid lg:grid-cols-2 gap-12 items-center">
           <motion.div variants={staggerContainer} initial="hidden" animate="visible">
             <motion.p variants={fadeUp} className="text-brand-400 font-medium tracking-widest uppercase text-sm">
               Sri Lanka's Premier Beauty Platform
             </motion.p>
-            <motion.h1 variants={fadeUp} className="font-display text-6xl italic text-neutral-900 mt-2 leading-tight">
+            <motion.h1 variants={fadeUp} className="font-display text-4xl sm:text-5xl lg:text-6xl italic text-neutral-900 mt-2 leading-tight">
               Look Beautiful,<br />Feel Confident
             </motion.h1>
-            <motion.p variants={fadeUp} className="text-neutral-600 text-lg mt-4 max-w-md">
+            <motion.p variants={fadeUp} className="text-neutral-600 text-base sm:text-lg mt-4 max-w-md">
               Book top-rated stylists near you. Hair, skin, nails, and beyond.
             </motion.p>
             <motion.div variants={fadeUp} className="flex flex-wrap gap-3 mt-8">
