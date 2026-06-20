@@ -101,7 +101,9 @@ export default function Step3DateTime() {
             <div>
               <p className="text-xs text-neutral-500 mb-3 flex items-center gap-1.5">
                 <Clock size={12} />
-                {format(selectedDate, 'EEEE, d MMM')} — {slots.length} slot{slots.length !== 1 ? 's' : ''} available
+                {format(selectedDate, 'EEEE, d MMM')} · {slots.length} slot{slots.length !== 1 ? 's' : ''} available
+                <span className="text-neutral-300">·</span>
+                <span className="text-neutral-400">{totalDurationMins()} min total</span>
               </p>
               <div className="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto pr-1">
                 {slots.map((slot) => (

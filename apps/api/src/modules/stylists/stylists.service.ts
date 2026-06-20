@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '../../config/database'
 import { AppError } from '../../middleware/error.middleware'
-import { addMinutes, format, parseISO, setHours, setMinutes, isBefore, isAfter } from 'date-fns'
+import { addMinutes, format, parseISO, setHours, setMinutes, isBefore, isAfter, isEqual } from 'date-fns'
 
 interface StylistFilters {
   specialty?: string
@@ -78,7 +78,7 @@ export const stylistsService = {
         status: { in: ['PENDING', 'CONFIRMED'] },
         startsAt: { gte: startOfDay, lte: endOfDay },
       },
-      select: { startsAt: true, endsAt: true },
+      select: { startsAt: true, endsAt: true, status: true },
     })
 
     // Generate 30-min slots within availability window
@@ -90,9 +90,16 @@ export const stylistsService = {
     const slots: string[] = []
     while (!isAfter(addMinutes(cursor, durationMins), windowEnd)) {
       const slotEnd = addMinutes(cursor, durationMins)
-      const overlaps = booked.some(
-        (b) => isBefore(cursor, b.endsAt) && isAfter(slotEnd, b.startsAt)
-      )
+      const overlaps = booked.some((b) => {
+        if (b.status === 'CONFIRMED') {
+          // Confirmed booking occupies its full duration — block any slot that overlaps it
+          return isBefore(cursor, b.endsAt) && isAfter(slotEnd, b.startsAt)
+        }
+        // Pending booking only blocks its exact start time and any slot that would
+        // start BEFORE it but end AFTER it starts (i.e. runs into it)
+        return isEqual(cursor, b.startsAt) ||
+               (isBefore(cursor, b.startsAt) && isAfter(slotEnd, b.startsAt))
+      })
       if (!overlaps) slots.push(format(cursor, "HH:mm"))
       cursor = addMinutes(cursor, 30)
     }

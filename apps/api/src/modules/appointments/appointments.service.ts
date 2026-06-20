@@ -30,15 +30,26 @@ export const appointmentsService = {
     const startsAt  = new Date(dto.startsAt)
     const endsAt    = new Date(startsAt.getTime() + totalMins * 60_000)
 
-    // Conflict guard — prevent double-booking
-    const conflict = await prisma.appointment.findFirst({
+    // CONFIRMED bookings occupy their full duration — block any overlap
+    const confirmedConflict = await prisma.appointment.findFirst({
       where: {
         stylistId: dto.stylistId,
-        status: { in: ['PENDING', 'CONFIRMED'] },
+        status: 'CONFIRMED',
         AND: [{ startsAt: { lt: endsAt } }, { endsAt: { gt: startsAt } }],
       },
     })
-    if (conflict) throw new AppError(409, 'This time slot is no longer available. Please pick another time.')
+    if (confirmedConflict) throw new AppError(409, 'This time slot is no longer available. Please pick another time.')
+
+    // PENDING bookings only block the exact same start time (overlapping PENDINGs are
+    // resolved automatically when the stylist confirms one of them)
+    const pendingConflict = await prisma.appointment.findFirst({
+      where: {
+        stylistId: dto.stylistId,
+        status: 'PENDING',
+        startsAt,
+      },
+    })
+    if (pendingConflict) throw new AppError(409, 'This time slot is no longer available. Please pick another time.')
 
     const appointment = await prisma.appointment.create({
       data: {
@@ -125,6 +136,34 @@ export const appointmentsService = {
     if (appt.status !== 'PENDING') throw new AppError(400, 'Only pending appointments can be confirmed')
 
     const updated = await prisma.appointment.update({ where: { id }, data: { status: 'CONFIRMED' } })
+
+    // Auto-cancel any other PENDING bookings for the same stylist that overlap this time window
+    const conflicting = await prisma.appointment.findMany({
+      where: {
+        id:       { not: id },
+        stylistId: appt.stylistId,
+        status:   'PENDING',
+        AND: [
+          { startsAt: { lt: appt.endsAt } },
+          { endsAt:   { gt: appt.startsAt } },
+        ],
+      },
+      include: { customer: { select: { name: true, email: true } } },
+    })
+
+    if (conflicting.length > 0) {
+      await prisma.appointment.updateMany({
+        where: { id: { in: conflicting.map((c) => c.id) } },
+        data: {
+          status:       'CANCELLED',
+          cancelReason: 'Another booking was confirmed for this time slot. Please choose a different time.',
+        },
+      })
+      for (const c of conflicting) {
+        sendCancellationEmail(c.customer.email, c.customer.name)
+          .catch((e) => console.error('[appointments] auto-cancel email failed:', e?.message))
+      }
+    }
 
     sendBookingConfirmation(appt.customer.email, {
       name:     appt.customer.name,

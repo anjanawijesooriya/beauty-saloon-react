@@ -56,6 +56,7 @@ export const useStylistSlots = (stylistId: string, date: string, duration: numbe
     staleTime: 0,
     refetchInterval: 20_000,
     refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   })
 
 export const useMyProfile = () =>

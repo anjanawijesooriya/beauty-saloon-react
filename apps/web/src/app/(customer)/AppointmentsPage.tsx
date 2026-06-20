@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { Star, X, CalendarCheck, ArrowRight, Loader2 } from 'lucide-react'
+import { Star, X, CalendarCheck, ArrowRight, Loader2, AlertCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAppointments, useCancelAppointment } from '@/hooks/useAppointments'
 import { useCreateReview } from '@/hooks/useReviews'
@@ -167,6 +167,12 @@ export default function AppointmentsPage() {
                     </div>
                     {appt.notes && (
                       <p className="text-xs text-neutral-400 mt-2 italic">"{appt.notes}"</p>
+                    )}
+                    {appt.status === 'CANCELLED' && appt.cancelReason && (
+                      <div className="flex items-start gap-1.5 mt-2 text-xs text-red-500 bg-red-50 rounded-lg px-2.5 py-1.5">
+                        <AlertCircle size={12} className="flex-shrink-0 mt-0.5" />
+                        <span>{appt.cancelReason}</span>
+                      </div>
                     )}
                   </div>
 
