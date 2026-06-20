@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Clock, Search, SlidersHorizontal, X } from 'lucide-react'
+import { Clock, Search, X } from 'lucide-react'
 import { useServices, useServiceCategories } from '@/hooks/useServices'
 import { staggerContainer, fadeUp, scaleIn } from '@/lib/motion'
 
