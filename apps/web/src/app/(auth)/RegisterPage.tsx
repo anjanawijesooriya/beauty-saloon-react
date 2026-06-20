@@ -13,7 +13,7 @@ const schema = z.object({
   name:     z.string().min(2, 'Name must be at least 2 characters').max(80),
   email:    z.string().email('Enter a valid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters').max(100),
-  phone:    z.string().regex(/^\+?[\d\s\-()]{7,15}$/, 'Enter a valid phone number').optional().or(z.literal('')),
+  phone:    z.string().regex(/^\+?[\d\s\-()]{7,15}$/, 'Enter a valid phone number'),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -57,7 +57,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      await registerUser(data.name, data.email, data.password, data.phone || undefined)
+      await registerUser(data.name, data.email, data.password, data.phone)
       toast.success('Account created! Welcome to GlowHer.')
       const role = useAuthStore.getState().user?.role
       if (role === 'ADMIN')        navigate('/admin',             { replace: true })
@@ -178,9 +178,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                Phone <span className="text-neutral-400 font-normal">(optional)</span>
-              </label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">Phone number</label>
               <input
                 {...register('phone')}
                 type="tel"
