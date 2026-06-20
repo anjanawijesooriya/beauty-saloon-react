@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Tag, ShoppingBag } from 'lucide-react'
+import { Spinner } from '@/components/ui/Spinner'
+import { useMinPending } from '@/hooks/useMinPending'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { useCartStore } from '@/store/cart'
@@ -32,7 +34,8 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 export default function CheckoutPage() {
   const navigate = useNavigate()
   const { items, totalLKR, clear } = useCartStore()
-  const { mutateAsync: createOrder, isPending } = useCreateOrder()
+  const { mutateAsync: createOrder, isPending: placingOrder } = useCreateOrder()
+  const pendingOrder = useMinPending(placingOrder)
   const [promoCode, setPromoCode] = useState('')
   const [promoDiscount, setPromoDiscount] = useState(0)
   const [promoError, setPromoError] = useState('')
@@ -132,8 +135,8 @@ export default function CheckoutPage() {
                 className="flex-1 px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 uppercase"
               />
               <button type="button" onClick={validatePromo} disabled={validatingPromo || !promoCode}
-                className="px-5 py-2.5 bg-neutral-900 text-white rounded-xl text-sm font-medium hover:bg-neutral-700 transition-colors disabled:opacity-40">
-                Apply
+                className="flex items-center gap-2 px-5 py-2.5 bg-neutral-900 text-white rounded-xl text-sm font-medium hover:bg-neutral-700 transition-colors disabled:opacity-40">
+                {validatingPromo ? <><Spinner size={14} />Checking…</> : 'Apply'}
               </button>
             </div>
             {promoError && <p className="text-xs text-red-500 mt-2">{promoError}</p>}
@@ -175,11 +178,9 @@ export default function CheckoutPage() {
                 <span>Total</span><span>LKR {finalTotal.toLocaleString()}</span>
               </div>
             </div>
-            <button type="submit" disabled={isPending}
+            <button type="submit" disabled={pendingOrder}
               className="mt-5 w-full py-3.5 gradient-brand text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2">
-              {isPending
-                ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Placing Order...</>
-                : 'Place Order'}
+              {pendingOrder ? <><Spinner />Placing Order…</> : 'Place Order'}
             </button>
           </div>
         </div>

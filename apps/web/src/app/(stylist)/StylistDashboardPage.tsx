@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { format, isToday } from 'date-fns'
 import { CalendarCheck, Clock, CheckCircle2, TrendingUp, Star, ArrowRight } from 'lucide-react'
 import { useAppointments, useStylistConfirm, useStylistComplete } from '@/hooks/useAppointments'
+import { Spinner } from '@/components/ui/Spinner'
 import { useMyProfile } from '@/hooks/useStylists'
 import { useAuthStore } from '@/store/auth'
 
@@ -20,6 +21,8 @@ export default function StylistDashboardPage() {
   const { data: appointments = [], isLoading } = useAppointments()
   const confirm  = useStylistConfirm()
   const complete = useStylistComplete()
+  const [confirmingId, setConfirmingId]   = useState<string | null>(null)
+  const [completingId, setCompletingId]   = useState<string | null>(null)
 
   const stats = useMemo(() => {
     const now = new Date()
@@ -132,20 +135,30 @@ export default function StylistDashboardPage() {
                   <div className="flex gap-1.5">
                     {appt.status === 'PENDING' && (
                       <button
-                        onClick={() => confirm.mutate(appt.id)}
+                        onClick={() => {
+                          setConfirmingId(appt.id)
+                          confirm.mutate(appt.id, { onSettled: () => setConfirmingId(null) })
+                        }}
                         disabled={confirm.isPending}
-                        className="px-2.5 py-1 text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors disabled:opacity-50"
                       >
-                        Confirm
+                        {confirmingId === appt.id
+                          ? <><Spinner variant="dark" size={12} />Confirming…</>
+                          : 'Confirm'}
                       </button>
                     )}
                     {appt.status === 'CONFIRMED' && (
                       <button
-                        onClick={() => complete.mutate(appt.id)}
+                        onClick={() => {
+                          setCompletingId(appt.id)
+                          complete.mutate(appt.id, { onSettled: () => setCompletingId(null) })
+                        }}
                         disabled={complete.isPending}
-                        className="px-2.5 py-1 text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50"
                       >
-                        Complete
+                        {completingId === appt.id
+                          ? <><Spinner variant="dark" size={12} />Completing…</>
+                          : 'Complete'}
                       </button>
                     )}
                   </div>

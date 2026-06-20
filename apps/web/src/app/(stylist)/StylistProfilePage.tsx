@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Trash2, CheckCircle2 } from 'lucide-react'
 import { useMyProfile, useUpdateMyProfile, useSetMyAvailability } from '@/hooks/useStylists'
+import { Spinner } from '@/components/ui/Spinner'
+import { useMinPending } from '@/hooks/useMinPending'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -20,6 +22,8 @@ export default function StylistProfilePage() {
   const { data: profile, isLoading } = useMyProfile()
   const { mutateAsync: updateProfile, isPending: savingProfile } = useUpdateMyProfile()
   const { mutateAsync: setAvailability, isPending: savingAvail } = useSetMyAvailability()
+  const pendingProfile = useMinPending(savingProfile)
+  const pendingAvail   = useMinPending(savingAvail)
 
   const [newSpecialty, setNewSpecialty] = useState('')
   const [availSlots, setAvailSlots] = useState<Record<number, { startTime: string; endTime: string } | null>>(() => {
@@ -171,10 +175,12 @@ export default function StylistProfilePage() {
 
           <button
             type="submit"
-            disabled={savingProfile}
+            disabled={pendingProfile}
             className="w-full py-3 gradient-brand text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-60 text-sm"
           >
-            {savingProfile ? 'Saving…' : 'Save Profile'}
+            {pendingProfile ? (
+              <span className="flex items-center justify-center gap-2"><Spinner />Saving…</span>
+            ) : 'Save Profile'}
           </button>
         </form>
 
@@ -236,10 +242,12 @@ export default function StylistProfilePage() {
           <button
             type="button"
             onClick={onSaveAvailability}
-            disabled={savingAvail}
+            disabled={pendingAvail}
             className="mt-5 w-full py-3 gradient-brand text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-60 text-sm"
           >
-            {savingAvail ? 'Saving…' : 'Save Availability'}
+            {pendingAvail ? (
+              <span className="flex items-center justify-center gap-2"><Spinner />Saving…</span>
+            ) : 'Save Availability'}
           </button>
         </div>
       </div>

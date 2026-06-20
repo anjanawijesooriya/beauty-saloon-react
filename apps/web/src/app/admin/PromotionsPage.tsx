@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Tag, X } from 'lucide-react'
+import { Spinner } from '@/components/ui/Spinner'
+import { useMinPending } from '@/hooks/useMinPending'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
@@ -23,12 +25,13 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 function PromotionModal({ onClose }: { onClose: () => void }) {
-  const { mutateAsync, isPending } = useMutation({
+  const { mutateAsync, isPending: creating } = useMutation({
     mutationFn: (dto: FormValues) => api.post('/promotions', dto).then((r) => r.data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['promotions'] }); toast.success('Promotion created') },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to create promotion'),
   })
 
+  const pending = useMinPending(creating)
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { type: 'PERCENT' } })
   const onSubmit = async (v: FormValues) => { await mutateAsync(v); onClose() }
 
@@ -82,8 +85,10 @@ function PromotionModal({ onClose }: { onClose: () => void }) {
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-neutral-200 rounded-xl text-sm text-neutral-600 hover:bg-neutral-50 transition-colors">Cancel</button>
-            <button type="submit" disabled={isPending} className="flex-1 py-2.5 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60">
-              {isPending ? 'Creating...' : 'Create'}
+            <button type="submit" disabled={pending} className="flex-1 py-2.5 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60">
+              {pending ? (
+                <span className="flex items-center justify-center gap-2"><Spinner />Creating…</span>
+              ) : 'Create'}
             </button>
           </div>
         </form>

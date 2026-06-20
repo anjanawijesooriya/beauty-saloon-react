@@ -87,6 +87,6 @@ export const productsService = {
 
   async remove(id: string) {
     await this.getById(id)
-    return prisma.product.update({ where: { id }, data: { isActive: false } })
+    return prisma.product.delete({ where: { id } })
   },
 }

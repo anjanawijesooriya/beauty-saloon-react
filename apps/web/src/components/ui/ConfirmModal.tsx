@@ -1,5 +1,7 @@
 import { createPortal } from 'react-dom'
 import { X, AlertTriangle, Trash2, Info } from 'lucide-react'
+import { Spinner } from './Spinner'
+import { useMinPending } from '@/hooks/useMinPending'
 
 type Variant = 'danger' | 'warning' | 'default'
 
@@ -41,6 +43,7 @@ export function ConfirmModal({
   onClose,
 }: ConfirmModalProps) {
   const { icon, confirmClass, iconBg } = config[variant]
+  const pending = useMinPending(isPending)
 
   return createPortal(
     <div
@@ -63,17 +66,22 @@ export function ConfirmModal({
         <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}
-            disabled={isPending}
+            disabled={pending}
             className="flex-1 py-2.5 border border-neutral-200 rounded-xl text-sm font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-60 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            disabled={isPending}
+            disabled={pending}
             className={`flex-1 py-2.5 rounded-xl text-sm font-medium disabled:opacity-60 transition-opacity ${confirmClass}`}
           >
-            {isPending ? 'Please wait…' : confirmLabel}
+            {pending ? (
+              <span className="flex items-center justify-center gap-2">
+                <Spinner />
+                Please wait…
+              </span>
+            ) : confirmLabel}
           </button>
         </div>
       </div>

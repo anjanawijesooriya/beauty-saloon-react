@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Star, ToggleLeft, ToggleRight, UserPlus, Trash2 } from "lucide-react";
+import { Spinner } from "@/components/ui/Spinner";
+import { useMinPending } from "@/hooks/useMinPending";
 import {
   useAdminStylists,
   useToggleStylistAvailability,
@@ -14,6 +16,7 @@ import type { StylistProfile } from "@/types";
 function PromoteModal({ onClose }: { onClose: () => void }) {
   const [userId, setUserId] = useState("");
   const { mutateAsync: create, isPending } = useCreateStylistProfile();
+  const pending = useMinPending(isPending);
   const { data: users } = useQuery({
     queryKey: ["admin-users"],
     queryFn: () => api.get("/users").then((r) => r.data),
@@ -62,10 +65,12 @@ function PromoteModal({ onClose }: { onClose: () => void }) {
             </button>
             <button
               type="submit"
-              disabled={!userId || isPending}
+              disabled={!userId || pending}
               className="flex-1 py-2.5 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-60 transition-opacity"
             >
-              {isPending ? "Creating…" : "Create Profile"}
+              {pending ? (
+                <span className="flex items-center justify-center gap-2"><Spinner />Creating…</span>
+              ) : "Create Profile"}
             </button>
           </div>
         </form>

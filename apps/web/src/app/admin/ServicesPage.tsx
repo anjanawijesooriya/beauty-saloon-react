@@ -5,6 +5,8 @@ import { z } from 'zod'
 import { Plus, Pencil, Trash2, Clock, X } from 'lucide-react'
 import { useServices, useServiceCategories, useCreateService, useUpdateService, useDeleteService } from '@/hooks/useServices'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { Spinner } from '@/components/ui/Spinner'
+import { useMinPending } from '@/hooks/useMinPending'
 import type { Service } from '@/types'
 
 const schema = z.object({
@@ -57,6 +59,7 @@ function ServiceModal({
   }
 
   const isPending = creating || updating
+  const pending   = useMinPending(isPending)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -120,8 +123,10 @@ function ServiceModal({
             <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-neutral-200 rounded-xl text-sm font-medium hover:bg-neutral-50 transition-colors">
               Cancel
             </button>
-            <button type="submit" disabled={isPending} className="flex-1 py-2.5 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60">
-              {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Service'}
+            <button type="submit" disabled={pending} className="flex-1 py-2.5 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60">
+              {pending ? (
+                <span className="flex items-center justify-center gap-2"><Spinner />Saving…</span>
+              ) : isEdit ? 'Save Changes' : 'Create Service'}
             </button>
           </div>
         </form>

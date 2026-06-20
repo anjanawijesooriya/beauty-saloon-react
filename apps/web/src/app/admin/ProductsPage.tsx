@@ -5,6 +5,8 @@ import { z } from 'zod'
 import { Plus, Pencil, Trash2, Package, X, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useAdminProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useToggleProductStatus } from '@/hooks/useProducts'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { Spinner } from '@/components/ui/Spinner'
+import { useMinPending } from '@/hooks/useMinPending'
 import type { Product } from '@/types'
 
 type PendingAction = { type: 'toggle'; product: Product } | { type: 'delete'; product: Product }
@@ -23,7 +25,8 @@ type FormValues = z.infer<typeof schema>
 function ProductModal({ product, onClose }: { product?: Product; onClose: () => void }) {
   const { mutateAsync: create, isPending: creating } = useCreateProduct()
   const { mutateAsync: update, isPending: updating } = useUpdateProduct()
-  const loading = creating || updating
+  const loading  = creating || updating
+  const pending  = useMinPending(loading)
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -80,9 +83,11 @@ function ProductModal({ product, onClose }: { product?: Product; onClose: () => 
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-neutral-200 rounded-xl text-sm text-neutral-600 hover:bg-neutral-50 transition-colors">Cancel</button>
-            <button type="submit" disabled={loading}
+            <button type="submit" disabled={pending}
               className="flex-1 py-2.5 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60">
-              {loading ? 'Saving...' : product ? 'Save Changes' : 'Create Product'}
+              {pending ? (
+                <span className="flex items-center justify-center gap-2"><Spinner />Saving…</span>
+              ) : product ? 'Save Changes' : 'Create Product'}
             </button>
           </div>
         </form>
