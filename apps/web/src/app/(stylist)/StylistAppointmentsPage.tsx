@@ -28,7 +28,7 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
 }
 
 type ActionType = 'confirm' | 'cancel' | 'complete' | 'noshow' | 'expire'
-type PendingAction = { type: ActionType; appt: Appointment }
+type PendingAction = { type: ActionType; appt: Appointment; reason?: string }
 type Filter = AppointmentStatus | 'ALL'
 
 const ACTION_CONFIG: Record<ActionType, {
@@ -46,7 +46,7 @@ const ACTION_CONFIG: Record<ActionType, {
   cancel: {
     variant: 'danger',
     title: () => 'Cancel this appointment?',
-    description: (a) => `The booking for ${a.customer.name} on ${format(new Date(a.startsAt), 'd MMM · h:mm a')} will be cancelled.`,
+    description: (a) => `The booking for ${a.customer.name} on ${format(new Date(a.startsAt), 'd MMM · h:mm a')} will be cancelled. The customer will be notified.`,
     confirmLabel: 'Yes, cancel',
   },
   complete: {
@@ -93,15 +93,15 @@ export default function StylistAppointmentsPage() {
 
   const sorted = [...visible].sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime())
 
-  const handleConfirm = () => {
+  const handleConfirm = (reason?: string) => {
     if (!pendingAction) return
     const { type, appt } = pendingAction
     const done = () => setPending(null)
-    if (type === 'confirm')  confirm.mutate(appt.id,                          { onSuccess: done })
-    if (type === 'cancel')   cancel.mutate({ id: appt.id },                   { onSuccess: done })
-    if (type === 'complete') complete.mutate(appt.id,                         { onSuccess: done })
-    if (type === 'noshow')   noShow.mutate(appt.id,                           { onSuccess: done })
-    if (type === 'expire')   cancel.mutate({ id: appt.id, reason: 'expired' }, { onSuccess: done })
+    if (type === 'confirm')  confirm.mutate(appt.id,                                         { onSuccess: done })
+    if (type === 'cancel')   cancel.mutate({ id: appt.id, reason: reason || undefined },     { onSuccess: done })
+    if (type === 'complete') complete.mutate(appt.id,                                        { onSuccess: done })
+    if (type === 'noshow')   noShow.mutate(appt.id,                                          { onSuccess: done })
+    if (type === 'expire')   cancel.mutate({ id: appt.id, reason: 'Booking was not confirmed before the appointment time.' }, { onSuccess: done })
   }
 
   const isMutating = confirm.isPending || complete.isPending || cancel.isPending || noShow.isPending
@@ -188,6 +188,12 @@ export default function StylistAppointmentsPage() {
                       {appt.notes && (
                         <p className="text-xs text-neutral-400 italic mt-1">Note: {appt.notes}</p>
                       )}
+                      {appt.status === 'CANCELLED' && appt.cancelReason && (
+                        <div className="flex items-start gap-1.5 mt-2 text-xs text-red-500 bg-red-50 rounded-lg px-2.5 py-1.5">
+                          <AlertCircle size={11} className="flex-shrink-0 mt-0.5" />
+                          <span>{appt.cancelReason}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -260,6 +266,9 @@ export default function StylistAppointmentsPage() {
           description={ACTION_CONFIG[pendingAction.type].description(pendingAction.appt)}
           confirmLabel={ACTION_CONFIG[pendingAction.type].confirmLabel}
           isPending={isMutating}
+          withReason={pendingAction.type === 'cancel'}
+          reasonLabel="Cancellation reason (optional)"
+          reasonPlaceholder="Let the customer know why you're cancelling…"
           onConfirm={handleConfirm}
           onClose={() => setPending(null)}
         />

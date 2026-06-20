@@ -108,13 +108,14 @@ export default function AppointmentsPage() {
   const [reviewAppt,   setReviewAppt]   = useState<Appointment | null>(null)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
 
   const handleCancel = (id: string) => {
     setCancellingId(id)
     cancel(
-      { id },
+      { id, reason: cancelReason.trim() || undefined },
       {
-        onSuccess: () => { setConfirmingId(null); setCancellingId(null) },
+        onSuccess: () => { setConfirmingId(null); setCancellingId(null); setCancelReason('') },
         onError:   () => { setConfirmingId(null); setCancellingId(null) },
       },
     )
@@ -195,24 +196,33 @@ export default function AppointmentsPage() {
                     )}
 
                     {appt.status === 'PENDING' && isConfirming && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-neutral-500">Cancel this?</span>
-                        <button
-                          onClick={() => handleCancel(appt.id)}
-                          disabled={isCancellingThis}
-                          className="text-xs font-medium text-red-500 hover:underline disabled:opacity-50 flex items-center gap-1"
-                        >
-                          {isCancellingThis
-                            ? <><Loader2 size={11} className="animate-spin" />Cancelling…</>
-                            : 'Yes, cancel'}
-                        </button>
-                        <button
-                          onClick={() => setConfirmingId(null)}
-                          disabled={isCancellingThis}
-                          className="text-xs text-neutral-400 hover:underline disabled:opacity-50"
-                        >
-                          Keep
-                        </button>
+                      <div className="w-full mt-2 space-y-2">
+                        <textarea
+                          value={cancelReason}
+                          onChange={(e) => setCancelReason(e.target.value)}
+                          placeholder="Reason for cancelling (optional)…"
+                          rows={2}
+                          maxLength={500}
+                          className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-xs resize-none focus:outline-none focus:ring-2 focus:ring-red-200 text-neutral-700"
+                        />
+                        <div className="flex items-center gap-2 justify-end">
+                          <button
+                            onClick={() => { setConfirmingId(null); setCancelReason('') }}
+                            disabled={isCancellingThis}
+                            className="text-xs text-neutral-400 hover:underline disabled:opacity-50"
+                          >
+                            Keep
+                          </button>
+                          <button
+                            onClick={() => handleCancel(appt.id)}
+                            disabled={isCancellingThis}
+                            className="text-xs font-medium px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 flex items-center gap-1 transition-colors"
+                          >
+                            {isCancellingThis
+                              ? <><Loader2 size={11} className="animate-spin" />Cancelling…</>
+                              : 'Yes, cancel'}
+                          </button>
+                        </div>
                       </div>
                     )}
 

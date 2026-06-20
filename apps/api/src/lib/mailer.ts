@@ -61,11 +61,58 @@ export async function sendBookingReminder(
   )
 }
 
-export async function sendCancellationEmail(to: string, name: string) {
+export async function sendCancellationEmail(
+  to: string,
+  name: string,
+  data?: { date?: string; stylist?: string; reason?: string; cancelledBy?: 'stylist' | 'admin' | 'auto' }
+) {
+  const whoLine = data?.cancelledBy === 'stylist'
+    ? `Your stylist <strong>${data.stylist ?? 'your stylist'}</strong> has cancelled your appointment.`
+    : data?.cancelledBy === 'auto'
+    ? `Your appointment was automatically cancelled because another booking was confirmed for this time slot.`
+    : `Your appointment has been cancelled.`
+
+  const reasonBlock = data?.reason
+    ? `<p style="background:#fff5f5;border-left:3px solid #f87171;padding:10px 14px;border-radius:4px;margin:16px 0;">
+         <strong>Reason:</strong> ${data.reason}
+       </p>`
+    : ''
+
+  const dateBlock = data?.date
+    ? `<p>Appointment date: <strong>${data.date}</strong></p>`
+    : ''
+
   await sendEmail(
     to,
     'Your GlowHer appointment has been cancelled',
-    `<h2>Hi ${name},</h2><p>Your appointment has been cancelled.</p>`
+    `<h2>Hi ${name},</h2>
+     <p>${whoLine}</p>
+     ${dateBlock}
+     ${reasonBlock}
+     <p>You can book a new appointment anytime at GlowHer.</p>`
+  )
+}
+
+export async function sendStylistCancellationEmail(
+  to: string,
+  stylistName: string,
+  data: { customerName: string; date: string; services: string[]; reason?: string }
+) {
+  const reasonBlock = data.reason
+    ? `<p style="background:#fff5f5;border-left:3px solid #f87171;padding:10px 14px;border-radius:4px;margin:16px 0;">
+         <strong>Customer's reason:</strong> ${data.reason}
+       </p>`
+    : ''
+
+  await sendEmail(
+    to,
+    'Appointment cancelled by customer — GlowHer',
+    `<h2>Hi ${stylistName},</h2>
+     <p><strong>${data.customerName}</strong> has cancelled their appointment with you.</p>
+     <p>Date: <strong>${data.date}</strong></p>
+     <p>Services: ${data.services.join(', ')}</p>
+     ${reasonBlock}
+     <p>The time slot is now free on your schedule.</p>`
   )
 }
 

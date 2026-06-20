@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import { prisma } from '../../config/database'
 import { AppError } from '../../middleware/error.middleware'
 import { Role } from '@prisma/client'
-import { sendBookingConfirmation, sendCancellationEmail } from '../../lib/mailer'
+import { sendBookingConfirmation, sendCancellationEmail, sendStylistCancellationEmail } from '../../lib/mailer'
 import { loyaltyService } from '../loyalty/loyalty.service'
 
 interface CreateAppointmentDto {
@@ -114,7 +114,8 @@ export const appointmentsService = {
       where: { id },
       include: {
         customer: { select: { name: true, email: true } },
-        stylist:  { include: { user: { select: { id: true } } } },
+        stylist:  { include: { user: { select: { id: true, name: true, email: true } } } },
+        items:    { include: { service: { select: { name: true } } } },
       },
     })
     if (!appt) throw new AppError(404, 'Appointment not found')
@@ -127,7 +128,28 @@ export const appointmentsService = {
       throw new AppError(400, `Appointment is already ${appt.status.toLowerCase()}`)
 
     const updated = await prisma.appointment.update({ where: { id }, data: { status: 'CANCELLED', cancelReason: reason } })
-    sendCancellationEmail(appt.customer.email, appt.customer.name).catch((e) => console.error('[appointments] cancellation email failed:', e?.message))
+
+    const dateStr = format(appt.startsAt, 'PPp')
+    const services = appt.items.map((i) => i.service.name)
+
+    if (isCustomer) {
+      // Customer cancelled — notify the stylist
+      sendStylistCancellationEmail(appt.stylist.user.email, appt.stylist.user.name, {
+        customerName: appt.customer.name,
+        date: dateStr,
+        services,
+        reason,
+      }).catch((e) => console.error('[appointments] stylist cancel email failed:', e?.message))
+    } else {
+      // Stylist or admin cancelled — notify the customer
+      sendCancellationEmail(appt.customer.email, appt.customer.name, {
+        date: dateStr,
+        stylist: appt.stylist.user.name,
+        reason,
+        cancelledBy: isStylist ? 'stylist' : 'admin',
+      }).catch((e) => console.error('[appointments] customer cancel email failed:', e?.message))
+    }
+
     return updated
   },
 
@@ -159,17 +181,19 @@ export const appointmentsService = {
       include: { customer: { select: { name: true, email: true } } },
     })
 
+    const autoReason = 'Another booking was confirmed for this time slot. Please choose a different time.'
     if (conflicting.length > 0) {
       await prisma.appointment.updateMany({
         where: { id: { in: conflicting.map((c) => c.id) } },
-        data: {
-          status:       'CANCELLED',
-          cancelReason: 'Another booking was confirmed for this time slot. Please choose a different time.',
-        },
+        data: { status: 'CANCELLED', cancelReason: autoReason },
       })
       for (const c of conflicting) {
-        sendCancellationEmail(c.customer.email, c.customer.name)
-          .catch((e) => console.error('[appointments] auto-cancel email failed:', e?.message))
+        sendCancellationEmail(c.customer.email, c.customer.name, {
+          date: format(appt.startsAt, 'PPp'),
+          stylist: appt.stylist.user.name,
+          reason: autoReason,
+          cancelledBy: 'auto',
+        }).catch((e) => console.error('[appointments] auto-cancel email failed:', e?.message))
       }
     }
 
