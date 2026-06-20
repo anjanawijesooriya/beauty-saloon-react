@@ -13,6 +13,13 @@ export default function Step4Confirm() {
     notes, setNotes, setStep, setTime, totalDurationMins, totalLKR, reset,
   } = useBookingStore()
 
+  // Build stylist-specific price map (mirrors booking store logic)
+  const stylistPriceMap = Object.fromEntries(
+    ((selectedStylist as any)?.services ?? []).map((ss: any) => [ss.service.id, Number(ss.priceLKR)])
+  )
+  const priceFor = (serviceId: string, basePriceLKR: string) =>
+    stylistPriceMap[serviceId] ?? Number(basePriceLKR)
+
   const { mutate: create, isPending } = useCreateAppointment()
   const [bookingError, setBookingError] = useState<string | null>(null)
 
@@ -104,7 +111,7 @@ export default function Step4Confirm() {
             {selectedServices.map((s) => (
               <div key={s.id} className="flex justify-between items-center">
                 <span className="text-sm text-neutral-800">{s.name}</span>
-                <span className="text-sm font-medium text-neutral-600">LKR {Number(s.basePriceLKR).toLocaleString()}</span>
+                <span className="text-sm font-medium text-neutral-600">LKR {priceFor(s.id, s.basePriceLKR).toLocaleString()}</span>
               </div>
             ))}
           </div>
