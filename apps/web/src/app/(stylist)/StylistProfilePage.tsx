@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Trash2, CheckCircle2 } from 'lucide-react'
+import { Plus, Trash2, CheckCircle2, Camera } from 'lucide-react'
 import { useMyProfile, useUpdateMyProfile, useSetMyAvailability } from '@/hooks/useStylists'
+import { useUploadAvatar, useRemoveAvatar } from '@/hooks/useProfile'
+import { useAuthStore } from '@/store/auth'
 import { Spinner } from '@/components/ui/Spinner'
 import { useMinPending } from '@/hooks/useMinPending'
 
@@ -22,8 +24,22 @@ export default function StylistProfilePage() {
   const { data: profile, isLoading } = useMyProfile()
   const { mutateAsync: updateProfile, isPending: savingProfile } = useUpdateMyProfile()
   const { mutateAsync: setAvailability, isPending: savingAvail } = useSetMyAvailability()
+  const { mutate: uploadAvatar, isPending: uploading } = useUploadAvatar()
+  const { mutate: removeAvatar, isPending: removing } = useRemoveAvatar()
+  const { user } = useAuthStore()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const pendingProfile = useMinPending(savingProfile)
   const pendingAvail   = useMinPending(savingAvail)
+  const pendingUpload  = useMinPending(uploading)
+  const pendingRemove  = useMinPending(removing)
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    uploadAvatar(file)
+    e.target.value = ''
+  }
 
   const [newSpecialty, setNewSpecialty] = useState('')
   const [availSlots, setAvailSlots] = useState<Record<number, { startTime: string; endTime: string } | null>>(() => {
@@ -101,11 +117,63 @@ export default function StylistProfilePage() {
     )
   }
 
+  const initials = user?.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() ?? '?'
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-neutral-900">My Profile</h1>
         <p className="text-sm text-neutral-400 mt-0.5">Manage your profile details and weekly schedule</p>
+      </div>
+
+      {/* Avatar card */}
+      <div className="bg-white rounded-2xl shadow-card p-5">
+        <div className="flex items-center gap-5">
+          <div className="relative flex-shrink-0">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-neutral-100">
+              {user?.avatarUrl
+                ? <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                : <div className="w-full h-full gradient-brand flex items-center justify-center text-white text-2xl font-bold">{initials}</div>
+              }
+            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={pendingUpload}
+              className="absolute bottom-0 right-0 w-7 h-7 bg-white border border-neutral-200 rounded-full flex items-center justify-center shadow-sm hover:bg-neutral-50 transition-colors disabled:opacity-60"
+            >
+              {pendingUpload ? <Spinner variant="dark" size={12} /> : <Camera size={12} className="text-neutral-600" />}
+            </button>
+          </div>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
+          <div className="min-w-0">
+            <p className="font-semibold text-neutral-900">{user?.name}</p>
+            <p className="text-sm text-neutral-400">{user?.email}</p>
+            <div className="flex items-center gap-3 mt-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={pendingUpload}
+                className="text-xs text-brand-500 hover:text-brand-600 font-medium transition-colors disabled:opacity-50"
+              >
+                {pendingUpload ? 'Uploading…' : 'Change photo'}
+              </button>
+              {user?.avatarUrl && (
+                <>
+                  <span className="text-neutral-200">|</span>
+                  <button
+                    type="button"
+                    onClick={() => removeAvatar()}
+                    disabled={pendingRemove}
+                    className="text-xs text-neutral-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                  >
+                    {pendingRemove ? 'Removing…' : 'Remove photo'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">

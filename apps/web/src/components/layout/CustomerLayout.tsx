@@ -3,7 +3,7 @@ import { RouteOutlet } from '@/components/ui/RouteOutlet'
 import { useAuthStore } from '@/store/auth'
 import { useThemeStore } from '@/store/theme'
 import { useCartStore } from '@/store/cart'
-import { Moon, Sun, User, LogOut, ShoppingBag, CalendarCheck } from 'lucide-react'
+import { Moon, Sun, LogOut, ShoppingBag, CalendarCheck } from 'lucide-react'
 
 export default function CustomerLayout() {
   const { user, logout } = useAuthStore()
@@ -50,8 +50,11 @@ export default function CustomerLayout() {
                 <Link to="/book" title="Book Appointment" className="p-2 rounded-full hover:bg-brand-50 transition-colors">
                   <CalendarCheck size={18} className="text-neutral-600" />
                 </Link>
-                <Link to="/profile" title="My Profile" className="p-2 rounded-full hover:bg-brand-50">
-                  <User size={18} className="text-neutral-600" />
+                <Link to="/profile" title="My Profile" className="rounded-full hover:opacity-90 transition-opacity">
+                  {user.avatarUrl
+                    ? <img src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full object-cover ring-2 ring-brand-100" />
+                    : <div className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center text-white text-xs font-bold">{user.name[0].toUpperCase()}</div>
+                  }
                 </Link>
                 <button onClick={handleLogout} title="Logout" className="p-2 rounded-full hover:bg-brand-50">
                   <LogOut size={18} className="text-neutral-600" />

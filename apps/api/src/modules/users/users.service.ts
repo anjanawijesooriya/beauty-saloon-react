@@ -40,6 +40,22 @@ export const usersService = {
     return prisma.user.update({ where: { id }, data: { isActive: false } })
   },
 
+  async uploadAvatar(userId: string, buffer: Buffer): Promise<{ avatarUrl: string }> {
+    const { uploadToCloudinary } = await import('../../lib/cloudinary')
+    const url = await uploadToCloudinary(buffer, 'glowher/avatars')
+    const user = await prisma.user.update({ where: { id: userId }, data: { avatarUrl: url } })
+    return { avatarUrl: user.avatarUrl! }
+  },
+
+  async removeAvatar(userId: string): Promise<void> {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { avatarUrl: true } })
+    if (user?.avatarUrl) {
+      const { deleteFromCloudinary } = await import('../../lib/cloudinary')
+      await deleteFromCloudinary(user.avatarUrl).catch(() => {})
+    }
+    await prisma.user.update({ where: { id: userId }, data: { avatarUrl: null } })
+  },
+
   async hardDelete(id: string) {
     await this.getById(id)
     await prisma.$transaction(async (tx) => {

@@ -63,63 +63,68 @@ function ServiceModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-modal w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-neutral-100">
+      <div className="bg-white rounded-2xl shadow-modal w-full max-w-lg flex flex-col" style={{ maxHeight: 'min(90vh, 680px)' }}>
+        {/* Sticky header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 flex-shrink-0">
           <h2 className="font-semibold text-neutral-900">{isEdit ? 'Edit Service' : 'New Service'}</h2>
           <button onClick={onClose} className="p-1.5 hover:bg-neutral-100 rounded-lg transition-colors">
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1.5">Category</label>
-            <select {...register('categoryId')} className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-              <option value="">Select category…</option>
-              {categories?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            {errors.categoryId && <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>}
-          </div>
+        {/* Scrollable body */}
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Category</label>
+                <select {...register('categoryId')} className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                  <option value="">Select category…</option>
+                  {categories?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                {errors.categoryId && <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>}
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1.5">Name</label>
-            <input {...register('name')} className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" placeholder="Classic Manicure" />
-            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
-          </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Name</label>
+                <input {...register('name')} className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" placeholder="Classic Manicure" />
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+              </div>
 
-          {!isEdit && (
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1.5">Slug</label>
-              <input {...register('slug')} className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" placeholder="classic-manicure" />
-              {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
+              {!isEdit && (
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Slug</label>
+                  <input {...register('slug')} className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" placeholder="classic-manicure" />
+                  {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Duration (min)</label>
+                <input {...register('durationMins')} type="number" min={15} className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+                {errors.durationMins && <p className="text-red-500 text-xs mt-1">{errors.durationMins.message}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Price (LKR)</label>
+                <input {...register('basePriceLKR')} type="number" min={0} className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+                {errors.basePriceLKR && <p className="text-red-500 text-xs mt-1">{errors.basePriceLKR.message}</p>}
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Description <span className="text-neutral-400 font-normal">(optional)</span></label>
+                <textarea {...register('description')} rows={2} className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 resize-none" />
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Image URL <span className="text-neutral-400 font-normal">(optional)</span></label>
+                <input {...register('imageUrl')} type="url" className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" placeholder="https://…" />
+                {errors.imageUrl && <p className="text-red-500 text-xs mt-1">{errors.imageUrl.message}</p>}
+              </div>
             </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1.5">Description</label>
-            <textarea {...register('description')} rows={3} className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 resize-none" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1.5">Duration (min)</label>
-              <input {...register('durationMins')} type="number" min={15} className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
-              {errors.durationMins && <p className="text-red-500 text-xs mt-1">{errors.durationMins.message}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1.5">Price (LKR)</label>
-              <input {...register('basePriceLKR')} type="number" min={0} className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
-              {errors.basePriceLKR && <p className="text-red-500 text-xs mt-1">{errors.basePriceLKR.message}</p>}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1.5">Image URL <span className="text-neutral-400 font-normal">(optional)</span></label>
-            <input {...register('imageUrl')} type="url" className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" placeholder="https://…" />
-            {errors.imageUrl && <p className="text-red-500 text-xs mt-1">{errors.imageUrl.message}</p>}
-          </div>
-
-          <div className="flex gap-3 pt-2">
+          {/* Sticky footer */}
+          <div className="flex gap-3 px-6 py-4 border-t border-neutral-100 flex-shrink-0">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-neutral-200 rounded-xl text-sm font-medium hover:bg-neutral-50 transition-colors">
               Cancel
             </button>

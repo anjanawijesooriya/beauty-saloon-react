@@ -28,6 +28,9 @@ function ProductModal({ product, onClose }: { product?: Product; onClose: () => 
   const loading  = creating || updating
   const pending  = useMinPending(loading)
 
+  const [imageUrls, setImageUrls] = useState<string[]>(product?.imageUrls ?? [])
+  const [imgInput, setImgInput] = useState('')
+
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: product ? {
@@ -36,52 +39,103 @@ function ProductModal({ product, onClose }: { product?: Product; onClose: () => 
     } : undefined,
   })
 
+  const addImageUrl = () => {
+    const url = imgInput.trim()
+    if (url && !imageUrls.includes(url)) {
+      setImageUrls((prev) => [...prev, url])
+      setImgInput('')
+    }
+  }
+
+  const removeImageUrl = (url: string) => setImageUrls((prev) => prev.filter((u) => u !== url))
+
   const onSubmit = async (values: FormValues) => {
-    if (product) await update({ id: product.id, ...values })
-    else await create(values)
+    const payload = { ...values, imageUrls: imageUrls.length ? imageUrls : undefined }
+    if (product) await update({ id: product.id, ...payload })
+    else await create(payload)
     onClose()
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-modal w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-5">
+      <div className="bg-white rounded-2xl shadow-modal w-full max-w-lg flex flex-col" style={{ maxHeight: 'min(90vh, 720px)' }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 flex-shrink-0">
           <h2 className="font-semibold text-neutral-900">{product ? 'Edit Product' : 'Add Product'}</h2>
           <button onClick={onClose} className="p-1.5 hover:bg-neutral-100 rounded-lg transition-colors"><X size={18} /></button>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {[
-            { label: 'Name', key: 'name', placeholder: 'Rose Hip Face Oil' },
-            { label: 'Slug', key: 'slug', placeholder: 'rose-hip-face-oil' },
-            { label: 'Category ID', key: 'categoryId', placeholder: 'UUID from admin' },
-          ].map(({ label, key, placeholder }) => (
-            <div key={key}>
-              <label className="block text-xs font-medium text-neutral-600 mb-1">{label}</label>
-              <input {...register(key as keyof FormValues)} placeholder={placeholder}
-                className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
-              {errors[key as keyof FormValues] && <p className="text-xs text-red-500 mt-1">{errors[key as keyof FormValues]?.message as string}</p>}
-            </div>
-          ))}
-          <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-1">Description</label>
-            <textarea {...register('description')} rows={3}
-              className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+            {[
+              { label: 'Name', key: 'name', placeholder: 'Rose Hip Face Oil' },
+              { label: 'Slug', key: 'slug', placeholder: 'rose-hip-face-oil' },
+              { label: 'Category ID', key: 'categoryId', placeholder: 'UUID from admin' },
+            ].map(({ label, key, placeholder }) => (
+              <div key={key}>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">{label}</label>
+                <input {...register(key as keyof FormValues)} placeholder={placeholder}
+                  className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+                {errors[key as keyof FormValues] && <p className="text-xs text-red-500 mt-1">{errors[key as keyof FormValues]?.message as string}</p>}
+              </div>
+            ))}
             <div>
-              <label className="block text-xs font-medium text-neutral-600 mb-1">Price (LKR)</label>
-              <input {...register('priceLKR')} type="number" step="0.01" placeholder="2500"
-                className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
-              {errors.priceLKR && <p className="text-xs text-red-500 mt-1">{errors.priceLKR.message}</p>}
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Description</label>
+              <textarea {...register('description')} rows={2}
+                className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none" />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">Price (LKR)</label>
+                <input {...register('priceLKR')} type="number" step="0.01" placeholder="2500"
+                  className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+                {errors.priceLKR && <p className="text-xs text-red-500 mt-1">{errors.priceLKR.message}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">Stock</label>
+                <input {...register('stock')} type="number" placeholder="50"
+                  className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+                {errors.stock && <p className="text-xs text-red-500 mt-1">{errors.stock.message}</p>}
+              </div>
+            </div>
+
+            {/* Image URLs */}
             <div>
-              <label className="block text-xs font-medium text-neutral-600 mb-1">Stock</label>
-              <input {...register('stock')} type="number" placeholder="50"
-                className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
-              {errors.stock && <p className="text-xs text-red-500 mt-1">{errors.stock.message}</p>}
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Product Images <span className="text-neutral-400 font-normal">(optional)</span></label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  value={imgInput}
+                  onChange={(e) => setImgInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addImageUrl())}
+                  placeholder="https://example.com/image.jpg"
+                  type="url"
+                  className="flex-1 px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                />
+                <button type="button" onClick={addImageUrl}
+                  className="px-3 py-2.5 border border-neutral-200 rounded-xl text-sm text-neutral-600 hover:bg-neutral-50 transition-colors flex-shrink-0">
+                  <Plus size={15} />
+                </button>
+              </div>
+              {imageUrls.length > 0 && (
+                <div className="space-y-1.5">
+                  {imageUrls.map((url) => (
+                    <div key={url} className="flex items-center gap-2 bg-neutral-50 rounded-xl px-3 py-2">
+                      <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-neutral-200">
+                        <img src={url} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                      </div>
+                      <span className="text-xs text-neutral-500 flex-1 truncate">{url}</span>
+                      <button type="button" onClick={() => removeImageUrl(url)} className="text-neutral-300 hover:text-red-400 transition-colors flex-shrink-0">
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-          <div className="flex gap-3 pt-2">
+
+          {/* Footer */}
+          <div className="flex gap-3 px-6 py-4 border-t border-neutral-100 flex-shrink-0">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-neutral-200 rounded-xl text-sm text-neutral-600 hover:bg-neutral-50 transition-colors">Cancel</button>
             <button type="submit" disabled={pending}
               className="flex-1 py-2.5 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60">

@@ -57,8 +57,11 @@ export default function ServiceDetailPage() {
                     to={`/stylists/${ss.stylist.id}`}
                     className="flex items-center gap-2 bg-white border border-neutral-200 rounded-xl px-3 py-2 hover:border-brand-300 hover:shadow-sm transition-all"
                   >
-                    <div className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                      {ss.stylist.user.name[0]}
+                    <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden">
+                      {ss.stylist.user.avatarUrl
+                        ? <img src={ss.stylist.user.avatarUrl} alt={ss.stylist.user.name} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full gradient-brand flex items-center justify-center text-white text-sm font-bold">{ss.stylist.user.name[0]}</div>
+                      }
                     </div>
                     <div>
                       <p className="text-sm font-medium text-neutral-900">{ss.stylist.user.name}</p>

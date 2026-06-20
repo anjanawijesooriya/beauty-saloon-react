@@ -108,8 +108,11 @@ export default function StylistReviewsPage() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full gradient-brand flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                    {review.customer.name[0]}
+                  <div className="w-9 h-9 rounded-full flex-shrink-0 overflow-hidden">
+                    {review.customer.avatarUrl
+                      ? <img src={review.customer.avatarUrl} alt={review.customer.name} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full gradient-brand flex items-center justify-center text-white text-sm font-bold">{review.customer.name[0]}</div>
+                    }
                   </div>
                   <div>
                     <div className="flex items-center gap-2">

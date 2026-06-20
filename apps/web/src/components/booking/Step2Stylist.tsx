@@ -42,9 +42,12 @@ export default function Step2Stylist() {
                 }`}
               >
                 {/* Avatar */}
-                <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-lg ${selected ? 'gradient-brand' : 'bg-neutral-300'}`}>
-                  {stylist.user.name[0]}
-                </div>
+                {(stylist as any).user.avatarUrl
+                  ? <img src={(stylist as any).user.avatarUrl} alt={stylist.user.name} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+                  : <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-lg ${selected ? 'gradient-brand' : 'bg-neutral-300'}`}>
+                      {stylist.user.name[0]}
+                    </div>
+                }
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">

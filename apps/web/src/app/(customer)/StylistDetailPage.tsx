@@ -249,8 +249,11 @@ export default function StylistDetailPage() {
                       <div key={review.id} className="pb-4 border-b border-neutral-100 last:border-0">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                              {review.customer.name[0]}
+                            <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden">
+                              {(review.customer as any).avatarUrl
+                                ? <img src={(review.customer as any).avatarUrl} alt={review.customer.name} className="w-full h-full object-cover" />
+                                : <div className="w-full h-full gradient-brand flex items-center justify-center text-white text-sm font-bold">{review.customer.name[0]}</div>
+                              }
                             </div>
                             <span className="text-sm font-medium text-neutral-800">{review.customer.name}</span>
                           </div>

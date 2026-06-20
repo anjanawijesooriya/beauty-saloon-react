@@ -22,7 +22,7 @@ export default function StylistLayout() {
     <div className="min-h-screen flex bg-neutral-50">
       <aside className="w-60 bg-white border-r border-neutral-100 flex flex-col">
         <div className="h-16 flex items-center px-5 border-b border-neutral-100">
-          <Link to="/" className="font-display text-xl italic text-brand-400">GlowHer</Link>
+          <Link to="/stylist/dashboard" className="font-display text-xl italic text-brand-400">GlowHer</Link>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-0.5">
           {navItems.map(({ to, label, icon: Icon }) => (
@@ -42,8 +42,11 @@ export default function StylistLayout() {
         </nav>
         <div className="p-3 border-t border-neutral-100">
           <div className="flex items-center gap-3 px-3 py-2 mb-1">
-            <div className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-              {user?.name?.[0]?.toUpperCase()}
+            <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden">
+              {user?.avatarUrl
+                ? <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                : <div className="w-full h-full gradient-brand flex items-center justify-center text-white text-sm font-bold">{user?.name?.[0]?.toUpperCase()}</div>
+              }
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-neutral-900 truncate">{user?.name}</p>
