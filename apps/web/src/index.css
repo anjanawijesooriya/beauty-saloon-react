@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap');
-
 :root {
   --font-ui: 'Plus Jakarta Sans', sans-serif;
   --font-display: 'Cormorant Garamond', serif;
@@ -41,3 +39,127 @@ h1, h2, .display {
     backdrop-filter: blur(16px);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* DARK MODE GLOBAL OVERRIDES                                                  */
+/* .dark .class (specificity 0,2,0) beats .class (0,1,0) — no !important      */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Custom utilities ───────────────────────────────────────────────────── */
+.dark .gradient-hero {
+  background: linear-gradient(160deg, #1a0d12 0%, #1f1018 50%, #180e09 100%);
+}
+.dark .glass {
+  background: rgba(15,8,12,0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-color: rgba(255,255,255,0.06);
+}
+.dark .shadow-card {
+  box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 4px 24px rgba(0,0,0,0.45);
+}
+.dark .shadow-card-hover {
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04), 0 8px 32px rgba(0,0,0,0.55);
+}
+
+/* ── Surface backgrounds ─────────────────────────────────────────────────── */
+.dark .bg-white          { background-color: #1c1c1c; }
+.dark .bg-neutral-50     { background-color: #141414; }
+.dark .bg-neutral-100    { background-color: #252525; }
+.dark .bg-neutral-200    { background-color: #333333; }
+
+/* Semi-transparent white used in hero floating cards */
+.dark .bg-white\/70      { background-color: rgba(30, 30, 30, 0.88); }
+.dark .bg-white\/80      { background-color: rgba(30, 30, 30, 0.92); }
+.dark .bg-white\/90      { background-color: rgba(30, 30, 30, 0.96); }
+
+/* Modal shadow (darker for dark mode) */
+.dark .shadow-modal      { box-shadow: 0 24px 64px rgba(0,0,0,0.65); }
+
+/* ── Status / semantic backgrounds (muted in dark mode) ─────────────────── */
+.dark .bg-red-50         { background-color: rgba(239, 68,  68, 0.12); }
+.dark .bg-emerald-50     { background-color: rgba( 16,185, 129, 0.12); }
+.dark .bg-green-50       { background-color: rgba( 34,197,  94, 0.12); }
+.dark .bg-amber-50       { background-color: rgba(245,158,  11, 0.12); }
+.dark .bg-yellow-50      { background-color: rgba(234,179,   8, 0.12); }
+.dark .bg-blue-50        { background-color: rgba( 59,130, 246, 0.12); }
+.dark .bg-brand-50       { background-color: rgba(212, 83, 126, 0.12); }
+.dark .bg-gold-50        { background-color: rgba(232,192,  98, 0.12); }
+.dark .bg-pink-50        { background-color: rgba(236, 72, 153, 0.12); }
+
+/* ── Text colors ─────────────────────────────────────────────────────────── */
+.dark .text-neutral-900  { color: #f5f5f5; }
+.dark .text-neutral-800  { color: #e5e5e5; }
+.dark .text-neutral-700  { color: #d4d4d4; }
+.dark .text-neutral-600  { color: #a3a3a3; }
+.dark .text-neutral-500  { color: #737373; }
+.dark .text-neutral-400  { color: #555555; }
+.dark .text-neutral-300  { color: #404040; }
+
+/* ── Status text colors (already saturated, keep them; slight brightness tweaks) */
+.dark .text-red-500      { color: #f87171; }
+.dark .text-emerald-600  { color: #34d399; }
+.dark .text-green-600    { color: #4ade80; }
+.dark .text-amber-600    { color: #fbbf24; }
+.dark .text-blue-600     { color: #60a5fa; }
+
+/* ── Borders ─────────────────────────────────────────────────────────────── */
+.dark .border-neutral-50  { border-color: #1e1e1e; }
+.dark .border-neutral-100 { border-color: #2a2a2a; }
+.dark .border-neutral-200 { border-color: #383838; }
+
+/* Divide lines */
+.dark .divide-neutral-100 > :not([hidden]) ~ :not([hidden]) { border-color: #2a2a2a; }
+.dark .divide-neutral-200 > :not([hidden]) ~ :not([hidden]) { border-color: #383838; }
+
+/* ── Hover backgrounds ───────────────────────────────────────────────────── */
+.dark .hover\:bg-neutral-50:hover  { background-color: #1c1c1c; }
+.dark .hover\:bg-neutral-100:hover { background-color: #2a2a2a; }
+.dark .hover\:bg-neutral-200:hover { background-color: #333333; }
+.dark .hover\:bg-red-50:hover      { background-color: rgba(239,68,68,0.12); }
+.dark .hover\:bg-brand-50:hover    { background-color: rgba(212,83,126,0.12); }
+
+/* ── Form elements ───────────────────────────────────────────────────────── */
+/* Many inputs in this codebase don't have an explicit bg-* class,
+   so we target the element type. Class-based overrides above win over this
+   due to higher specificity (0,2,0 > 0,1,1). */
+.dark input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.dark textarea,
+.dark select {
+  background-color: #1f1f1f;
+  color: #f0f0f0;
+  border-color: #383838;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #555555;
+}
+/* Error-state inputs keep the reddish bg from .dark .bg-red-50 */
+.dark input.bg-red-50 {
+  background-color: rgba(239,68,68,0.12);
+  color: #fca5a5;
+  border-color: rgba(239,68,68,0.4);
+}
+
+/* ── Mobile: horizontal scroll for tables ───────────────────────────────── */
+@media (max-width: 640px) {
+  /* Preserve rounded corners while allowing table scroll */
+  .shadow-card.overflow-hidden:has(table) {
+    overflow-x: auto;
+  }
+}
+
+/* ── Gradient stop overrides (bg-gradient-to-* from-* to-*) ─────────────── */
+.dark .from-white       { --tw-gradient-from: #1c1c1c var(--tw-gradient-from-position); }
+.dark .from-neutral-50  { --tw-gradient-from: #141414 var(--tw-gradient-from-position); }
+.dark .from-neutral-100 { --tw-gradient-from: #252525 var(--tw-gradient-from-position); }
+.dark .from-brand-50    { --tw-gradient-from: rgba(212,83,126,0.08) var(--tw-gradient-from-position); }
+.dark .to-white         { --tw-gradient-to: #1c1c1c var(--tw-gradient-to-position); }
+.dark .to-neutral-50    { --tw-gradient-to: #141414 var(--tw-gradient-to-position); }
+.dark .to-pink-50       { --tw-gradient-to: rgba(236,72,153,0.06) var(--tw-gradient-to-position); }
+
+/* ── Dark scrollbar ──────────────────────────────────────────────────────── */
+.dark ::-webkit-scrollbar        { width: 6px; height: 6px; }
+.dark ::-webkit-scrollbar-track  { background: #111; }
+.dark ::-webkit-scrollbar-thumb  { background: #333; border-radius: 3px; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #444; }

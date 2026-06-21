@@ -7,8 +7,11 @@ interface ThemeStore {
   toggleTheme: () => void
 }
 
+const savedTheme = (localStorage.getItem('glowher-theme') as Theme) || 'light'
+document.documentElement.classList.toggle('dark', savedTheme === 'dark')
+
 export const useThemeStore = create<ThemeStore>((set) => ({
-  theme: (localStorage.getItem('glowher-theme') as Theme) || 'light',
+  theme: savedTheme,
   toggleTheme: () =>
     set((s) => {
       const next = s.theme === 'light' ? 'dark' : 'light'

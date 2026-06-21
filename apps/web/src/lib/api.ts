@@ -13,7 +13,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const isAuthEndpoint = err.config?.url?.includes('/auth/')
+    const isPasswordChange = err.config?.url?.includes('/users/me/password')
+    if (err.response?.status === 401 && !isAuthEndpoint && !isPasswordChange) {
+      // Session expired on a protected call — force re-login
       localStorage.removeItem('glowher-token')
       window.location.href = '/login'
     }

@@ -1,0 +1,268 @@
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { Plus, Pencil, Trash2, Package, X, ToggleLeft, ToggleRight } from 'lucide-react'
+import { useAdminProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useToggleProductStatus } from '@/hooks/useProducts'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { Spinner } from '@/components/ui/Spinner'
+import { useMinPending } from '@/hooks/useMinPending'
+import type { Product } from '@/types'
+
+type PendingAction = { type: 'toggle'; product: Product } | { type: 'delete'; product: Product }
+
+const schema = z.object({
+  name:        z.string().min(2).max(200),
+  slug:        z.string().min(2).max(200).regex(/^[a-z0-9-]+$/, 'Lowercase, numbers, hyphens only'),
+  description: z.string().max(2000).optional(),
+  priceLKR:    z.coerce.number().positive(),
+  stock:       z.coerce.number().int().min(0),
+  categoryId:  z.string().min(1, 'Required'),
+})
+
+type FormValues = z.infer<typeof schema>
+
+function ProductModal({ product, onClose }: { product?: Product; onClose: () => void }) {
+  const { mutateAsync: create, isPending: creating } = useCreateProduct()
+  const { mutateAsync: update, isPending: updating } = useUpdateProduct()
+  const loading  = creating || updating
+  const pending  = useMinPending(loading)
+
+  const [imageUrls, setImageUrls] = useState<string[]>(product?.imageUrls ?? [])
+  const [imgInput, setImgInput] = useState('')
+
+  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: product ? {
+      name: product.name, slug: product.slug, description: product.description,
+      priceLKR: Number(product.priceLKR), stock: product.stock, categoryId: product.categoryId,
+    } : undefined,
+  })
+
+  const addImageUrl = () => {
+    const url = imgInput.trim()
+    if (url && !imageUrls.includes(url)) {
+      setImageUrls((prev) => [...prev, url])
+      setImgInput('')
+    }
+  }
+
+  const removeImageUrl = (url: string) => setImageUrls((prev) => prev.filter((u) => u !== url))
+
+  const onSubmit = async (values: FormValues) => {
+    // Auto-add any URL still in the input field that the user forgot to press +
+    const finalUrls = [...imageUrls]
+    const pending = imgInput.trim()
+    if (pending && !finalUrls.includes(pending)) finalUrls.push(pending)
+
+    const payload = { ...values, imageUrls: finalUrls }
+    if (product) await update({ id: product.id, ...payload })
+    else await create(payload)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-modal w-full max-w-lg flex flex-col" style={{ maxHeight: 'min(90vh, 720px)' }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 flex-shrink-0">
+          <h2 className="font-semibold text-neutral-900">{product ? 'Edit Product' : 'Add Product'}</h2>
+          <button onClick={onClose} className="p-1.5 hover:bg-neutral-100 rounded-lg transition-colors"><X size={18} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+            {[
+              { label: 'Name', key: 'name', placeholder: 'Rose Hip Face Oil' },
+              { label: 'Slug', key: 'slug', placeholder: 'rose-hip-face-oil' },
+              { label: 'Category ID', key: 'categoryId', placeholder: 'UUID from admin' },
+            ].map(({ label, key, placeholder }) => (
+              <div key={key}>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">{label}</label>
+                <input {...register(key as keyof FormValues)} placeholder={placeholder}
+                  className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+                {errors[key as keyof FormValues] && <p className="text-xs text-red-500 mt-1">{errors[key as keyof FormValues]?.message as string}</p>}
+              </div>
+            ))}
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Description</label>
+              <textarea {...register('description')} rows={2}
+                className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">Price (LKR)</label>
+                <input {...register('priceLKR')} type="number" step="0.01" placeholder="2500"
+                  className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+                {errors.priceLKR && <p className="text-xs text-red-500 mt-1">{errors.priceLKR.message}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">Stock</label>
+                <input {...register('stock')} type="number" placeholder="50"
+                  className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+                {errors.stock && <p className="text-xs text-red-500 mt-1">{errors.stock.message}</p>}
+              </div>
+            </div>
+
+            {/* Image URLs */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Product Images <span className="text-neutral-400 font-normal">(optional)</span></label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  value={imgInput}
+                  onChange={(e) => setImgInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addImageUrl())}
+                  placeholder="https://example.com/image.jpg"
+                  type="url"
+                  className="flex-1 px-3 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                />
+                <button type="button" onClick={addImageUrl}
+                  className="px-3 py-2.5 border border-neutral-200 rounded-xl text-sm text-neutral-600 hover:bg-neutral-50 transition-colors flex-shrink-0">
+                  <Plus size={15} />
+                </button>
+              </div>
+              {imageUrls.length > 0 && (
+                <div className="space-y-1.5">
+                  {imageUrls.map((url) => (
+                    <div key={url} className="flex items-center gap-2 bg-neutral-50 rounded-xl px-3 py-2">
+                      <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-neutral-200">
+                        <img src={url} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                      </div>
+                      <span className="text-xs text-neutral-500 flex-1 truncate">{url}</span>
+                      <button type="button" onClick={() => removeImageUrl(url)} className="text-neutral-300 hover:text-red-400 transition-colors flex-shrink-0">
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex gap-3 px-6 py-4 border-t border-neutral-100 flex-shrink-0">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-neutral-200 rounded-xl text-sm text-neutral-600 hover:bg-neutral-50 transition-colors">Cancel</button>
+            <button type="submit" disabled={pending}
+              className="flex-1 py-2.5 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60">
+              {pending ? (
+                <span className="flex items-center justify-center gap-2"><Spinner />Saving…</span>
+              ) : product ? 'Save Changes' : 'Create Product'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+export default function AdminProductsPage() {
+  const [modal, setModal] = useState<'create' | Product | null>(null)
+  const [pending, setPending] = useState<PendingAction | null>(null)
+  const { data, isLoading } = useAdminProducts({ limit: 50 })
+  const { mutate: remove, isPending: deleting } = useDeleteProduct()
+  const { mutate: toggleActive, isPending: toggling } = useToggleProductStatus()
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-neutral-900">Products</h1>
+        <button onClick={() => setModal('create')}
+          className="flex items-center gap-2 px-4 py-2.5 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity">
+          <Plus size={16} /> Add Product
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 bg-neutral-100 rounded-xl animate-pulse" />)}</div>
+      ) : (
+        <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-neutral-100">
+                <th className="text-left text-xs font-medium text-neutral-400 px-6 py-3">Product</th>
+                <th className="text-left text-xs font-medium text-neutral-400 px-4 py-3">Price</th>
+                <th className="text-left text-xs font-medium text-neutral-400 px-4 py-3">Stock</th>
+                <th className="text-left text-xs font-medium text-neutral-400 px-4 py-3">Status</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-50">
+              {!data?.products.length ? (
+                <tr><td colSpan={5} className="text-center py-12 text-sm text-neutral-400"><Package size={32} className="mx-auto mb-2 opacity-30" />No products yet</td></tr>
+              ) : data.products.map((p) => (
+                <tr key={p.id} className="hover:bg-neutral-50 transition-colors">
+                  <td className="px-6 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-neutral-100 overflow-hidden flex-shrink-0">
+                        {p.imageUrls[0] ? <img src={p.imageUrls[0]} alt={p.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-neutral-300"><Package size={14} /></div>}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-neutral-800">{p.name}</p>
+                        <p className="text-xs text-neutral-400">{p.slug}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-sm font-medium text-neutral-700">LKR {Number(p.priceLKR).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-600">{p.stock}</td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium border ${p.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-neutral-100 text-neutral-400 border-neutral-200'}`}>
+                      {p.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1 justify-end">
+                      <button
+                        onClick={() => setPending({ type: 'toggle', product: p })}
+                        title={p.isActive ? 'Set Inactive' : 'Set Active'}
+                        className="p-1.5 text-neutral-400 hover:text-brand-500 transition-colors"
+                      >
+                        {p.isActive ? <ToggleRight size={16} className="text-emerald-500" /> : <ToggleLeft size={16} />}
+                      </button>
+                      <button onClick={() => setModal(p)} className="p-1.5 text-neutral-400 hover:text-brand-500 transition-colors"><Pencil size={14} /></button>
+                      <button onClick={() => setPending({ type: 'delete', product: p })} className="p-1.5 text-neutral-400 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {modal && (
+        <ProductModal
+          product={modal === 'create' ? undefined : modal as Product}
+          onClose={() => setModal(null)}
+        />
+      )}
+
+      {pending?.type === 'toggle' && (
+        <ConfirmModal
+          variant="warning"
+          title={pending.product.isActive ? 'Set product to Inactive?' : 'Set product to Active?'}
+          description={
+            pending.product.isActive
+              ? `"${pending.product.name}" will be hidden from the customer shop.`
+              : `"${pending.product.name}" will become visible and purchasable in the shop.`
+          }
+          confirmLabel={pending.product.isActive ? 'Yes, set inactive' : 'Yes, set active'}
+          isPending={toggling}
+          onConfirm={() => toggleActive(pending.product.id, { onSuccess: () => setPending(null) })}
+          onClose={() => setPending(null)}
+        />
+      )}
+
+      {pending?.type === 'delete' && (
+        <ConfirmModal
+          variant="danger"
+          title={`Remove "${pending.product.name}"?`}
+          description="This product will be permanently deactivated and hidden from all customers."
+          confirmLabel="Yes, remove product"
+          isPending={deleting}
+          onConfirm={() => remove(pending.product.id, { onSuccess: () => setPending(null) })}
+          onClose={() => setPending(null)}
+        />
+      )}
+    </div>
+  )
+}

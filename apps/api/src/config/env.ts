@@ -1,17 +1,24 @@
 export const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: Number(process.env.PORT) || 3001,
-  JWT_SECRET: process.env.JWT_SECRET!,
+
+  // Required
+  JWT_SECRET: process.env.JWT_SECRET || 'fallback-dev-secret-change-in-prod',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:5173',
-  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME!,
-  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY!,
-  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET!,
-  SENDGRID_API_KEY: process.env.SENDGRID_API_KEY!,
-  SENDGRID_FROM: process.env.SENDGRID_FROM || 'noreply@glowher.lk',
-  TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
-  TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
-  TWILIO_FROM: process.env.TWILIO_FROM,
-  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+
+  // Optional — features degrade gracefully when missing
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || '',
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '',
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || '',
+  SMTP_HOST: process.env.SMTP_HOST || '',
+  SMTP_PORT: Number(process.env.SMTP_PORT) || 587,
+  SMTP_USER: process.env.SMTP_USER || '',
+  SMTP_PASS: process.env.SMTP_PASS || '',
+  SMTP_FROM: process.env.SMTP_FROM || 'GlowHer <noreply@glowher.lk>',
+  TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || '',
+  TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || '',
+  TWILIO_FROM: process.env.TWILIO_FROM || '',
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
 }
