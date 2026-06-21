@@ -24,7 +24,14 @@ import { startReminderJob } from './jobs/reminders.job'
 const app = express()
 
 app.use(helmet())
-app.use(cors({ origin: env.CLIENT_URL, credentials: true }))
+const allowedOrigins = env.CLIENT_URL.split(',').map((o) => o.trim())
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true)
+    cb(new Error(`CORS: ${origin} not allowed`))
+  },
+  credentials: true,
+}))
 
 // Raw body for Stripe webhook — must come before express.json()
 app.use('/api/webhooks', express.raw({ type: 'application/json' }), webhookRoutes)
