@@ -50,6 +50,8 @@ app.use('/api/promotions',   promotionRoutes)
 app.use('/api/loyalty',      loyaltyRoutes)
 app.use('/api/reviews',      reviewRoutes)
 
+app.get('/api/health', (_req, res) => res.json({ status: 'ok', env: env.NODE_ENV }))
+
 app.use(errorHandler)
 
 startReminderJob()
