@@ -116,6 +116,55 @@ export const ordersService = {
     return prisma.order.update({ where: { id }, data: { status: status as any } })
   },
 
+  async adminDelete(id: string) {
+    const order = await prisma.order.findUnique({ where: { id } })
+    if (!order) throw new AppError(404, 'Order not found')
+    await prisma.orderItem.deleteMany({ where: { orderId: id } })
+    await prisma.order.delete({ where: { id } })
+  },
+
+  async simulatePaymentDev(orderId: string, customerId: string) {
+    if (env.STRIPE_SECRET_KEY) {
+      throw new AppError(400, 'Dev simulation is not available in production')
+    }
+    const order = await this.getById(orderId, customerId)
+    if (order.paymentStatus === 'PAID') throw new AppError(400, 'Order is already paid')
+    return prisma.order.update({
+      where: { id: orderId },
+      data: { paymentStatus: 'PAID', status: 'PROCESSING' },
+    })
+  },
+
+  async verifyPayment(orderId: string, customerId: string, paymentIntentId?: string) {
+    const order = await this.getById(orderId, customerId)
+    if (order.paymentStatus === 'PAID') return order
+    if (!env.STRIPE_SECRET_KEY) return order
+
+    // Prefer the PI the client actually confirmed; fall back to what's stored in DB
+    const piId = paymentIntentId || order.stripePaymentIntentId
+    if (!piId) return order
+
+    const intent = await stripe.paymentIntents.retrieve(piId)
+
+    if (intent.status === 'succeeded') {
+      return prisma.order.update({
+        where: { id: orderId },
+        data: { paymentStatus: 'PAID', status: 'PROCESSING', stripePaymentIntentId: piId },
+        include: { items: { include: { product: true } }, customer: { select: { name: true, email: true } } },
+      })
+    }
+
+    if (intent.status === 'canceled' || intent.status === 'requires_payment_method') {
+      return prisma.order.update({
+        where: { id: orderId },
+        data: { paymentStatus: 'FAILED' },
+        include: { items: { include: { product: true } }, customer: { select: { name: true, email: true } } },
+      })
+    }
+
+    return order
+  },
+
   async createPaymentIntent(orderId: string, customerId: string) {
     const order = await this.getById(orderId, customerId)
     if (order.paymentStatus === 'PAID') throw new AppError(400, 'Order is already paid')
@@ -123,6 +172,17 @@ export const ordersService = {
     if (!env.STRIPE_SECRET_KEY) {
       // Dev mode: return mock client secret
       return { clientSecret: 'dev_mock_secret', orderId }
+    }
+
+    // Re-use existing intent only when it's still in an actionable state.
+    // succeeded/canceled are terminal — Stripe won't let Elements mount against them.
+    const REUSABLE = ['requires_payment_method', 'requires_confirmation', 'requires_action', 'processing']
+    if (order.stripePaymentIntentId) {
+      const existing = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId)
+      if (REUSABLE.includes(existing.status)) {
+        return { clientSecret: existing.client_secret, orderId }
+      }
+      // Terminal state — fall through to create a fresh intent
     }
 
     const intent = await stripe.paymentIntents.create({

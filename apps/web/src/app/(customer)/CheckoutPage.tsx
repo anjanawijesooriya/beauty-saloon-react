@@ -73,7 +73,7 @@ export default function CheckoutPage() {
         shippingAddress: values,
       })
       clear()
-      navigate(`/orders/${order.id}?success=1`)
+      navigate(`/orders/${order.id}/pay`)
     } catch {
       // error toast handled in hook
     }

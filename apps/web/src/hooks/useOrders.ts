@@ -67,14 +67,44 @@ export const usePayOrder = () =>
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Payment initiation failed'),
   })
 
+export const useAdminDeleteOrder = () =>
+  useMutation({
+    mutationFn: (id: string) => api.delete(`/orders/admin/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] })
+      toast.success('Order deleted')
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to delete order'),
+  })
+
 export const useAdminUpdateOrderStatus = () =>
   useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       api.patch(`/orders/admin/${id}/status`, { status }).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] })
-      // Customer-side order list should also reflect the status change
       queryClient.invalidateQueries({ queryKey: ['orders'] })
       toast.success('Order status updated')
     },
+  })
+
+export const useVerifyPayment = () =>
+  useMutation({
+    mutationFn: ({ orderId, paymentIntentId }: { orderId: string; paymentIntentId?: string }) =>
+      api.post(`/orders/${orderId}/pay/verify`, { paymentIntentId }).then((r) => r.data),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['orders', data.id], data)
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] })
+    },
+  })
+
+export const useSimulatePaymentDev = () =>
+  useMutation({
+    mutationFn: (orderId: string) => api.post(`/orders/${orderId}/pay/simulate`).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] })
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Simulation failed'),
   })

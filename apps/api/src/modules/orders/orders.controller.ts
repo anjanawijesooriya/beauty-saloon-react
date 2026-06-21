@@ -18,11 +18,23 @@ export const ordersController = {
     try { res.json(await ordersService.createPaymentIntent(req.params.id, req.user.sub)) } catch (err) { next(err) }
   },
 
+  async verifyPayment(req: Request, res: Response, next: NextFunction) {
+    try { res.json(await ordersService.verifyPayment(req.params.id, req.user.sub, req.body.paymentIntentId)) } catch (err) { next(err) }
+  },
+
+  async simulatePaymentDev(req: Request, res: Response, next: NextFunction) {
+    try { res.json(await ordersService.simulatePaymentDev(req.params.id, req.user.sub)) } catch (err) { next(err) }
+  },
+
   async adminList(req: Request, res: Response, next: NextFunction) {
     try { res.json(await ordersService.adminList()) } catch (err) { next(err) }
   },
 
   async adminUpdateStatus(req: Request, res: Response, next: NextFunction) {
     try { res.json(await ordersService.adminUpdateStatus(req.params.id, req.body.status)) } catch (err) { next(err) }
+  },
+
+  async adminDelete(req: Request, res: Response, next: NextFunction) {
+    try { await ordersService.adminDelete(req.params.id); res.status(204).send() } catch (err) { next(err) }
   },
 }

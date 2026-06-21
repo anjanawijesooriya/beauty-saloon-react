@@ -26,6 +26,7 @@ const CartPage             = lazy(() => import('./app/(customer)/CartPage'))
 const CheckoutPage         = lazy(() => import('./app/(customer)/CheckoutPage'))
 const OrdersPage           = lazy(() => import('./app/(customer)/OrdersPage'))
 const { OrderDetailPage }  = { OrderDetailPage: lazy(() => import('./app/(customer)/OrdersPage').then(m => ({ default: m.OrderDetailPage }))) }
+const PaymentPage          = lazy(() => import('./app/(customer)/PaymentPage'))
 const AdminProductsPage    = lazy(() => import('./app/admin/ProductsPage'))
 const AdminOrdersPage      = lazy(() => import('./app/admin/OrdersPage'))
 const AdminPromotionsPage  = lazy(() => import('./app/admin/PromotionsPage'))
@@ -94,6 +95,7 @@ export default function App() {
               <Route path="/checkout"         element={<CheckoutPage />} />
               <Route path="/orders"           element={<OrdersPage />} />
               <Route path="/orders/:id"       element={<OrderDetailPage />} />
+              <Route path="/orders/:id/pay"   element={<PaymentPage />} />
             </Route>
           </Route>
 

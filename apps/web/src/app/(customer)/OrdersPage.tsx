@@ -1,10 +1,11 @@
+import { useEffect } from 'react'
 import { format } from 'date-fns'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { Package, CheckCircle2, Truck, XCircle, Clock, ArrowRight } from 'lucide-react'
+import { Package, CheckCircle2, Truck, XCircle, Clock, ArrowRight, CreditCard, AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useOrders, useOrder } from '@/hooks/useOrders'
+import { useOrders, useOrder, useVerifyPayment } from '@/hooks/useOrders'
 import { fadeUp } from '@/lib/motion'
-import type { OrderStatus } from '@/types'
+import type { OrderStatus, PaymentStatus } from '@/types'
 
 const STATUS: Record<OrderStatus, { label: string; color: string; icon: React.ReactNode }> = {
   PENDING:    { label: 'Pending',    color: 'bg-amber-50 text-amber-600 border-amber-100',       icon: <Clock size={11} /> },
@@ -15,7 +16,14 @@ const STATUS: Record<OrderStatus, { label: string; color: string; icon: React.Re
   REFUNDED:   { label: 'Refunded',   color: 'bg-neutral-100 text-neutral-500 border-neutral-200', icon: <XCircle size={11} /> },
 }
 
-function StatusBadge({ status }: { status: OrderStatus }) {
+const PAYMENT_STATUS: Record<PaymentStatus, { label: string; color: string }> = {
+  UNPAID:   { label: 'Unpaid',   color: 'bg-amber-50 text-amber-600 border-amber-100' },
+  PAID:     { label: 'Paid',     color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+  FAILED:   { label: 'Failed',   color: 'bg-red-50 text-red-500 border-red-100' },
+  REFUNDED: { label: 'Refunded', color: 'bg-neutral-100 text-neutral-500 border-neutral-200' },
+}
+
+function OrderStatusBadge({ status }: { status: OrderStatus }) {
   const cfg = STATUS[status] ?? STATUS.PENDING
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${cfg.color}`}>
@@ -24,44 +32,125 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   )
 }
 
+function PaymentBadge({ status }: { status: PaymentStatus }) {
+  const cfg = PAYMENT_STATUS[status] ?? PAYMENT_STATUS.UNPAID
+  return (
+    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${cfg.color}`}>
+      <CreditCard size={10} />{cfg.label}
+    </span>
+  )
+}
+
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [params] = useSearchParams()
-  const success = params.get('success') === '1'
-  const { data: order, isLoading } = useOrder(id!)
+  const isSuccess = params.get('success') === '1'
+  const paymentDone = params.get('payment_done') === '1'
+  const redirectStatus = params.get('redirect_status')
 
-  if (isLoading) return <div className="max-w-2xl mx-auto px-4 py-20 text-center text-neutral-400 text-sm">Loading...</div>
+  const { data: order, isLoading } = useOrder(id!)
+  const { mutate: verifyPayment } = useVerifyPayment()
+
+  // When Stripe redirects back after 3DS, sync status to DB.
+  // Stripe appends ?payment_intent=pi_xxx to the return_url automatically.
+  useEffect(() => {
+    if (paymentDone && id) {
+      const paymentIntentId = params.get('payment_intent') || undefined
+      verifyPayment({ orderId: id, paymentIntentId })
+    }
+  }, [paymentDone, id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (isLoading) return <div className="max-w-2xl mx-auto px-4 py-20 text-center text-neutral-400 text-sm">Loading…</div>
   if (!order) return <div className="max-w-2xl mx-auto px-4 py-20 text-center text-neutral-400 text-sm">Order not found</div>
+
+  const showSuccess = isSuccess || (paymentDone && redirectStatus === 'succeeded') || (paymentDone && order.paymentStatus === 'PAID')
+  const paymentFailed = paymentDone && redirectStatus === 'failed'
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
-      {success && (
+      {/* Success banner */}
+      {showSuccess && (
         <motion.div variants={fadeUp} initial="hidden" animate="visible"
           className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-3">
           <CheckCircle2 className="text-emerald-500 flex-shrink-0" size={20} />
           <div>
-            <p className="text-sm font-semibold text-emerald-700">Order Placed Successfully!</p>
-            <p className="text-xs text-emerald-600">We'll process your order and update you on the status.</p>
+            <p className="text-sm font-semibold text-emerald-700">Order Confirmed!</p>
+            <p className="text-xs text-emerald-600 mt-0.5">Your payment was received. We'll update you on shipping progress.</p>
           </div>
         </motion.div>
       )}
 
-      <div className="flex items-start justify-between mb-6">
+      {/* Payment failed banner */}
+      {paymentFailed && (
+        <motion.div variants={fadeUp} initial="hidden" animate="visible"
+          className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3">
+          <AlertCircle className="text-red-500 flex-shrink-0" size={20} />
+          <div>
+            <p className="text-sm font-semibold text-red-700">Payment Failed</p>
+            <p className="text-xs text-red-600 mt-0.5">Your payment was not processed. Please try again.</p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6 gap-4">
         <div>
           <h1 className="font-display text-3xl italic text-neutral-900">Order Details</h1>
           <p className="text-xs text-neutral-400 mt-1">#{order.id.slice(0, 8).toUpperCase()} · {format(new Date(order.createdAt), 'd MMM yyyy')}</p>
         </div>
-        <StatusBadge status={order.status} />
+        <div className="flex flex-col items-end gap-1.5">
+          <OrderStatusBadge status={order.status} />
+          <PaymentBadge status={order.paymentStatus} />
+        </div>
       </div>
 
+      {/* Pay Now CTA — shown when order is unpaid */}
+      {order.paymentStatus === 'UNPAID' && order.status !== 'CANCELLED' && (
+        <div className="mb-5 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <CreditCard size={18} className="text-amber-500 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-amber-700">Payment Pending</p>
+              <p className="text-xs text-amber-600">Complete your payment to confirm this order.</p>
+            </div>
+          </div>
+          <Link
+            to={`/orders/${order.id}/pay`}
+            className="flex-shrink-0 px-4 py-2 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            Pay Now
+          </Link>
+        </div>
+      )}
+
+      {/* Failed payment CTA */}
+      {order.paymentStatus === 'FAILED' && (
+        <div className="mb-5 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle size={18} className="text-red-500 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-red-700">Payment Failed</p>
+              <p className="text-xs text-red-600">Your last payment attempt was unsuccessful. Please retry.</p>
+            </div>
+          </div>
+          <Link
+            to={`/orders/${order.id}/pay`}
+            className="flex-shrink-0 px-4 py-2 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            Retry Payment
+          </Link>
+        </div>
+      )}
+
       <div className="space-y-4">
+        {/* Items */}
         <div className="bg-white rounded-2xl shadow-card p-5">
           <h2 className="text-sm font-semibold text-neutral-700 mb-3">Items</h2>
           <div className="space-y-3">
             {order.items.map((item) => (
               <div key={item.id} className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-neutral-100 overflow-hidden flex-shrink-0">
-                  {item.product.imageUrls[0]
+                  {item.product.imageUrls?.[0]
                     ? <img src={item.product.imageUrls[0]} alt={item.product.name} className="w-full h-full object-cover" />
                     : <div className="w-full h-full flex items-center justify-center text-neutral-300"><Package size={16} /></div>
                   }
@@ -80,6 +169,7 @@ export function OrderDetailPage() {
           </div>
         </div>
 
+        {/* Shipping address */}
         <div className="bg-white rounded-2xl shadow-card p-5">
           <h2 className="text-sm font-semibold text-neutral-700 mb-3">Shipping Address</h2>
           <p className="text-sm text-neutral-600">{order.shippingAddress.fullName}</p>
@@ -128,16 +218,23 @@ export default function OrdersPage() {
                 <Package size={18} className="text-brand-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-neutral-900">Order #{order.id.slice(0, 8).toUpperCase()}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-semibold text-neutral-900">Order #{order.id.slice(0, 8).toUpperCase()}</p>
+                  {order.paymentStatus === 'UNPAID' && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">
+                      PAYMENT DUE
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-neutral-400 mt-0.5">
                   {order.items.length} item{order.items.length !== 1 ? 's' : ''} · {format(new Date(order.createdAt), 'd MMM yyyy')}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1.5">
-                <StatusBadge status={order.status} />
+                <OrderStatusBadge status={order.status} />
                 <p className="text-xs font-semibold text-neutral-700">LKR {Number(order.totalLKR).toLocaleString()}</p>
               </div>
-              <ArrowRight size={16} className="text-neutral-300 group-hover:text-brand-400 transition-colors" />
+              <ArrowRight size={16} className="text-neutral-300 group-hover:text-brand-400 transition-colors flex-shrink-0" />
             </Link>
           ))}
         </div>

@@ -25,11 +25,14 @@ const router = Router()
 
 router.use(authenticate)
 
-router.get('/admin/all',        authorize('ADMIN'),                                   ordersController.adminList)
-router.patch('/admin/:id/status', authorize('ADMIN'),                                 ordersController.adminUpdateStatus)
+router.get('/admin/all',           authorize('ADMIN'), ordersController.adminList)
+router.patch('/admin/:id/status',  authorize('ADMIN'), ordersController.adminUpdateStatus)
+router.delete('/admin/:id',        authorize('ADMIN'), ordersController.adminDelete)
 router.post('/',                authorize('CUSTOMER'), validate(CreateOrderSchema),   ordersController.create)
 router.get('/',                                                                        ordersController.list)
 router.get('/:id',                                                                     ordersController.getById)
-router.post('/:id/pay',         authorize('CUSTOMER'),                                ordersController.pay)
+router.post('/:id/pay',          authorize('CUSTOMER'),                               ordersController.pay)
+router.post('/:id/pay/verify',   authorize('CUSTOMER'),                               ordersController.verifyPayment)
+router.post('/:id/pay/simulate', authorize('CUSTOMER'),                               ordersController.simulatePaymentDev)
 
 export default router
